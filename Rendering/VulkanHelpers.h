@@ -9,127 +9,108 @@
 #include <vector>
 #include <stdexcept>
 #include <cstring>
-#include <set>
 
-inline bool hasLayer(const char* const layerName, const std::vector<VkLayerProperties>& availableLayers)
+class VulkanHelpers
 {
-    for (const auto& layerProperties : availableLayers)
+public:
+    static bool hasLayer(const char* const layerName, const std::vector<VkLayerProperties>& availableLayers)
     {
-        if (strcmp(layerName, layerProperties.layerName) == 0)
+        for (const auto& layerProperties : availableLayers)
         {
-            return true;
+            if (strcmp(layerName, layerProperties.layerName) == 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    static void verifyValidationLayerSupport(const std::vector<const char*> &layerNames)
+    {
+        uint32_t propertyCount = 0;
+        if (vkEnumerateInstanceLayerProperties(&propertyCount, nullptr) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to fetch layer properties count");
+        }
+
+        if (propertyCount == 0)
+        {
+            throw std::runtime_error("failed to find any layer properties");
+        }
+
+        std::vector<VkLayerProperties> availableLayers(propertyCount);
+        if (vkEnumerateInstanceLayerProperties(&propertyCount, availableLayers.data()) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to fetch layer properties");
+        }
+
+        for (const char* layerName : layerNames)
+        {
+            if (!hasLayer(layerName, availableLayers))
+            {
+                const std::string layerString (layerName);
+                throw std::runtime_error("layer " + layerString + "is not supported on this platform");
+            }
         }
     }
 
-    return false;
-}
+    static uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+        VkPhysicalDeviceMemoryProperties memoryProperties;
+        vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
 
-inline void verifyValidationLayerSupport(const std::vector<const char*> &layerNames)
-{
-    uint32_t propertyCount = 0;
-    if (vkEnumerateInstanceLayerProperties(&propertyCount, nullptr) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to fetch layer properties count");
-    }
+        for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++) {
+            auto maskedProperties = (memoryProperties.memoryTypes[i].propertyFlags & properties);
 
-    if (propertyCount == 0)
-    {
-        throw std::runtime_error("failed to find any layer properties");
-    }
-
-    std::vector<VkLayerProperties> availableLayers(propertyCount);
-    if (vkEnumerateInstanceLayerProperties(&propertyCount, availableLayers.data()) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to fetch layer properties");
-    }
-
-    for (const char* layerName : layerNames)
-    {
-        if (!hasLayer(layerName, availableLayers))
-        {
-            const std::string layerString (layerName);
-            throw std::runtime_error("layer " + layerString + "is not supported on this platform");
-        }
-    }
-}
-
-inline VkPhysicalDevice getPhysicalDevice(VkInstance instance, const std::vector<const char*> &deviceExtensions)
-{
-    uint32_t physicalDeviceCount = 0;
-    if (vkEnumeratePhysicalDevices(instance, &physicalDeviceCount, nullptr) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to get physical device count!");
-    }
-
-    std::vector<VkPhysicalDevice> physicalDevices(physicalDeviceCount);
-    if (vkEnumeratePhysicalDevices(instance, &physicalDeviceCount, physicalDevices.data()) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to get physical devices!");
-    }
-
-    if (physicalDevices.empty())
-    {
-        throw std::runtime_error("No physical devices found!");
-    }
-
-    VkPhysicalDeviceProperties physicalDeviceProperties{};
-    for (const auto& physicalDevice : physicalDevices)
-    {
-        vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
-
-        if (physicalDeviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
-        {
-            continue;
+            if (typeFilter & (1 << i) && maskedProperties == properties) {
+                return i;
+            }
         }
 
-        uint32_t extensionCount;
-        vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
+        throw std::runtime_error("Failed to find suitable memory type");
+    }
 
-        if (extensionCount == 0)
+    static void createBuffer(
+        VkDevice device,
+        VkPhysicalDevice physicalDevice,
+        VkDeviceSize size,
+        VkBufferUsageFlags usage,
+        VkMemoryPropertyFlags properties,
+        VkBuffer& buffer,
+        VkDeviceMemory& bufferMemory)
+    {
+        VkBufferCreateInfo bufferInfo{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+        bufferInfo.size = size;
+        bufferInfo.usage = usage;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
         {
-            continue;
+            throw std::runtime_error("Failed to create buffer");
         }
 
-        std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-        vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
+        VkMemoryRequirements memRequirements;
+        vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
 
-        std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
-        for (const auto& extension : availableExtensions)
+        VkMemoryAllocateInfo allocInfo{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO };
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = findMemoryType(
+            physicalDevice,
+            memRequirements.memoryTypeBits,
+            properties);
+
+        if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
         {
-            requiredExtensions.erase(extension.extensionName);
+            throw std::runtime_error("Failed to allocate buffer memory");
         }
 
-        if (requiredExtensions.empty())
+        if (vkBindBufferMemory(device, buffer, bufferMemory, 0) != VK_SUCCESS)
         {
-            return physicalDevice;
+            throw std::runtime_error("Failed to bind buffer memory");
         }
     }
 
-    return physicalDevices[0];
-}
+};
 
-inline uint32_t getQueueFamilyIndex(VkPhysicalDevice physicalDevice, VkQueueFlags queueFlags)
-{
-    uint32_t familyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, nullptr);
-
-    if (familyCount == 0)
-    {
-        throw std::runtime_error("failed to find any queue families!");
-    }
-
-    std::vector<VkQueueFamilyProperties> familyProperties(familyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, familyProperties.data());
-
-    for (size_t i = 0; i < familyProperties.size(); i++)
-    {
-        if (familyProperties[i].queueFlags & queueFlags)
-        {
-            return i;
-        }
-    }
-
-    throw std::runtime_error("failed to find suitable queue families!");
-}
 
 #endif //VULKANHELPERS_H

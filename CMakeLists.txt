@@ -10,7 +10,9 @@ add_executable(FireEmblemClone main.cpp
         Level.h
         Core/Timestep.h
         Core/BaseTypes.h
-        include/stb/stb_image.cpp)
+        include/stb/stb_image.cpp
+        Core/Mesh.cpp
+        Core/Mesh.h)
 
 add_subdirectory(include/glfw-3.4)
 add_subdirectory(include/stb)

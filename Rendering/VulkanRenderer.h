@@ -8,8 +8,10 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "Pipeline.h"
 #include "Swapchain.h"
 #include "VulkanRessources.h"
+#include "../Core/Mesh.h"
 
 class VulkanRenderer
 {
@@ -19,29 +21,16 @@ public:
     ~VulkanRenderer();
 
 private:
-    struct UniformBufferObject {
-        glm::mat4 model;
-        glm::mat4 view;
-        glm::mat4 projection;
-    };
-
     const std::vector<const char*> m_validationLayers = {
         "VK_LAYER_KHRONOS_validation"
     };
 
-    std::shared_ptr<VulkanRessources> m_vulkanRessources = nullptr;
-    std::unique_ptr<Swapchain> m_swapchain = nullptr;
+    std::unique_ptr<Mesh> m_quadMesh;
 
-    VkDescriptorSetLayout m_descriptorSetLayout = VK_NULL_HANDLE;
-    VkDescriptorPool m_descriptorPool = VK_NULL_HANDLE;
-    std::vector<VkDescriptorSet> m_descriptorSets{};
+    std::shared_ptr<VulkanRessources> m_vulkanRessources;
+    std::unique_ptr<Swapchain> m_swapchain;
+    std::unique_ptr<Pipeline> m_pipeline;
 
-    std::vector<VkBuffer> m_uniformBuffers;
-    std::vector<VkDeviceMemory> m_uniformBufferMemories;
-    std::vector<void*> m_uniformBuffersMapped;
-
-    VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
-    VkPipeline m_graphicsPipeline = VK_NULL_HANDLE;
     VkSampler m_sampler = VK_NULL_HANDLE;
 
     VkBuffer m_vertexBuffer = VK_NULL_HANDLE;
@@ -61,15 +50,6 @@ private:
         VkBuffer& dstBuffer,
         VkDeviceMemory& dstBufferMemory
     );
-
-    void createBuffer(
-        VkDeviceSize size,
-        VkBufferUsageFlags usage,
-        VkMemoryPropertyFlags properties,
-        VkBuffer& buffer,
-        VkDeviceMemory& bufferMemory);
-
-    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
     void createImage(
         uint32_t width,

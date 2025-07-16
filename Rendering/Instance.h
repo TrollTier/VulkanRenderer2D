@@ -24,7 +24,7 @@ void initializeInstance(
 
     if (enableValidationLayers)
     {
-        verifyValidationLayerSupport(validationLayers);
+        VulkanHelpers::verifyValidationLayerSupport(validationLayers);
 
         createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
         createInfo.ppEnabledLayerNames = validationLayers.data();

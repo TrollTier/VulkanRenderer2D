@@ -1,7 +1,7 @@
 add_library(Rendering
     VulkanRenderer.cpp
         VulkanHelpers.h
-        Vertex.h
+        ../Core/Vertex.h
         Sampler.h
         Descriptors.h
         Instance.h
@@ -12,6 +12,9 @@ add_library(Rendering
         VulkanRessources.h
         VulkanWindow.cpp
         VulkanWindow.h
+        Pipeline.cpp
+        Pipeline.h
+        UniformBufferObject.h
 )
 
 target_link_libraries(Rendering PRIVATE Vulkan::Vulkan)
