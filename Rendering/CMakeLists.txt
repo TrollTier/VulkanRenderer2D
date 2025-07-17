@@ -15,6 +15,9 @@ add_library(Rendering
         Pipeline.cpp
         Pipeline.h
         UniformBufferObject.h
+        Texture2D.cpp
+        Texture2D.h
+        ImageLoader.h
 )
 
 target_link_libraries(Rendering PRIVATE Vulkan::Vulkan)
