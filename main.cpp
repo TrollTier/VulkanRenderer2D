@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include "Rendering/VulkanRenderer.h"
+#include <glm/glm.hpp>
 
 int main() {
     glfwInit();
@@ -17,9 +18,32 @@ int main() {
     VulkanRenderer renderer{};
     renderer.initialize(true, vulkanWindow);
 
+    const std::vector<Vertex> vertices = {
+        {{-0.5f, -0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+        {{0.5f, -0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+        {{0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+        {{-0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+    };
+
+    const std::vector<uint16_t> indices = {
+        0, 1, 2, 2, 3, 0
+    };
+
+    const auto quadMesh = std::make_shared<Mesh>(0, vertices, indices);
+    renderer.onMeshCreated(quadMesh);
+
+    auto objects = std::vector<GameObject>{};
+    objects.emplace_back(
+        glm::vec3(0.2f, 0.1f, 1),
+        quadMesh);
+
+    objects.emplace_back(
+        glm::vec3(0.5f, 0.3f, 1),
+        quadMesh);
+
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
-        renderer.draw_scene();
+        renderer.draw_scene(objects);
     }
 
     std::cout << "Hello, World!" << std::endl;

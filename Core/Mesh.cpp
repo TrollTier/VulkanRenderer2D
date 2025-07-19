@@ -4,10 +4,11 @@
 
 #include "Mesh.h"
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<uint16_t> indices)
+Mesh::Mesh(size_t meshIndex, std::vector<Vertex> vertices, std::vector<uint16_t> indices)
 {
-    m_vertices = vertices;
-    m_indices = indices;
+    m_meshIndex = meshIndex;
+    m_vertices = std::move(vertices);
+    m_indices = std::move(indices);
 }
 
 const std::vector<Vertex>& Mesh::getVertices() const
@@ -19,3 +20,9 @@ const std::vector<uint16_t>& Mesh::getIndices() const
 {
     return m_indices;
 }
+
+size_t Mesh::getMeshIndex() const
+{
+    return m_meshIndex;
+}
+

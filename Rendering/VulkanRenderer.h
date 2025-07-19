@@ -11,21 +11,22 @@
 #include "Swapchain.h"
 #include "Texture2D.h"
 #include "VulkanRessources.h"
+#include "../Core/GameObject.h"
 #include "../Core/Mesh.h"
 
 class VulkanRenderer
 {
 public:
-    void initialize(bool enableValidationLayers, VulkanWindow& window);
-    void draw_scene();
     ~VulkanRenderer();
+
+    void initialize(bool enableValidationLayers, VulkanWindow& window);
+    void onMeshCreated(const std::shared_ptr<Mesh> mesh);
+    void draw_scene(const std::vector<GameObject>& gameObjects);
 
 private:
     const std::vector<const char*> m_validationLayers = {
         "VK_LAYER_KHRONOS_validation"
     };
-
-    std::unique_ptr<Mesh> m_quadMesh;
 
     std::shared_ptr<VulkanRessources> m_vulkanRessources;
     std::unique_ptr<Swapchain> m_swapchain;
@@ -34,11 +35,11 @@ private:
 
     VkSampler m_sampler = VK_NULL_HANDLE;
 
-    VkBuffer m_vertexBuffer = VK_NULL_HANDLE;
-    VkDeviceMemory m_vertexBufferMemory = VK_NULL_HANDLE;
+    std::vector<VkBuffer> m_vertexBuffers {1, VK_NULL_HANDLE};
+    std::vector<VkDeviceMemory> m_vertexBufferMemories {1, VK_NULL_HANDLE};
 
-    VkBuffer m_indexBuffer = VK_NULL_HANDLE;
-    VkDeviceMemory m_indexBufferMemory = VK_NULL_HANDLE;
+    std::vector<VkBuffer> m_indexBuffers {1, VK_NULL_HANDLE};
+    std::vector<VkDeviceMemory> m_indexBufferMemories {1, VK_NULL_HANDLE};
 
     void createBufferWithData(
         const void* srcData,

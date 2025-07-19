@@ -22,11 +22,14 @@ VulkanRenderer::~VulkanRenderer()
 
     vkDeviceWaitIdle(device);
 
-    vkFreeMemory(device, m_indexBufferMemory, allocator);
-    vkDestroyBuffer(device, m_indexBuffer, allocator);
+    for (size_t i = 0; i < m_indexBuffers.size(); i++)
+    {
+        vkFreeMemory(device, m_indexBufferMemories[i], allocator);
+        vkDestroyBuffer(device, m_indexBuffers[i], allocator);
 
-    vkFreeMemory(device, m_vertexBufferMemory, allocator);
-    vkDestroyBuffer(device, m_vertexBuffer, allocator);
+        vkFreeMemory(device, m_vertexBufferMemories[i], allocator);
+        vkDestroyBuffer(device, m_vertexBuffers[i], allocator);
+    }
 
     vkDestroySampler(device, m_sampler, allocator);
 
@@ -36,19 +39,6 @@ void VulkanRenderer::initialize(
     bool enableValidationLayers,
     VulkanWindow& window)
 {
-    const std::vector<Vertex> vertices = {
-        {{-0.5f, -0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
-        {{0.5f, -0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
-        {{0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-        {{-0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
-    };
-
-    const std::vector<uint16_t> indices = {
-        0, 1, 2, 2, 3, 0
-    };
-
-    m_quadMesh = std::make_unique<Mesh>(vertices, indices);
-
     std::vector<const char*> instanceExtensions{};
     window.fillRequiredInstanceExtensions(instanceExtensions);
     instanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -75,20 +65,6 @@ void VulkanRenderer::initialize(
         &m_sampler,
         m_vulkanRessources->m_allocator);
 
-    createBufferWithData(
-        vertices.data(),
-        sizeof(vertices[0]) * vertices.size(),
-        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        m_vertexBuffer,
-        m_vertexBufferMemory);
-
-    createBufferWithData(
-        indices.data(),
-        sizeof(indices[0]) * indices.size(),
-        VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-        m_indexBuffer,
-        m_indexBufferMemory);
-
     m_texture = std::make_unique<Texture2D>(m_vulkanRessources, "../Assets/texture.jpg");
 
     VkDescriptorImageInfo imageInfo{};
@@ -98,6 +74,37 @@ void VulkanRenderer::initialize(
 
     m_pipeline->updateAfterImageLoaded(imageInfo);
 }
+
+void VulkanRenderer::onMeshCreated(const std::shared_ptr<Mesh> mesh)
+{
+    const auto& vertices = mesh->getVertices();
+    const auto& indices = mesh->getIndices();
+
+    const size_t index = mesh->getMeshIndex();
+
+    if (index >= m_indexBuffers.size())
+    {
+        m_indexBuffers.resize(m_indexBuffers.size() * 2);
+        m_indexBufferMemories.resize(m_indexBufferMemories.size() * 2);
+        m_vertexBuffers.resize(m_vertexBuffers.size() * 2);
+        m_vertexBufferMemories.resize(m_vertexBufferMemories.size() * 2);
+    }
+
+    createBufferWithData(
+        vertices.data(),
+        sizeof(vertices[0]) * vertices.size(),
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        m_vertexBuffers[index],
+        m_vertexBufferMemories[index]);
+
+    createBufferWithData(
+        indices.data(),
+        sizeof(indices[0]) * indices.size(),
+        VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        m_indexBuffers[index],
+        m_indexBufferMemories[index]);
+}
+
 
 void VulkanRenderer::createBufferWithData(
     const void *srcData,
@@ -192,7 +199,7 @@ void VulkanRenderer::updateUniformBuffer(size_t imageIndex) {
     m_pipeline->updateUniformBuffer(imageIndex, ubo);
 }
 
-void VulkanRenderer::draw_scene()
+void VulkanRenderer::draw_scene(const std::vector<GameObject>& gameObjects)
 {
     const auto currentFrameElement = m_swapchain->getCurrentFrame();
 
@@ -290,10 +297,32 @@ void VulkanRenderer::draw_scene()
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         m_pipeline->getPipeline());
 
-    VkBuffer vertexBuffers[] = { m_vertexBuffer };
-    VkDeviceSize offsets[] = { 0 };
-    vkCmdBindVertexBuffers(currentImageElement->commandBuffer, 0, 1, vertexBuffers, offsets);
-    vkCmdBindIndexBuffer(currentImageElement->commandBuffer, m_indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+    for (const auto& gameObject : gameObjects)
+    {
+        const auto mesh = gameObject.getMesh();
+
+        if (mesh.expired())
+        {
+            continue;
+        }
+
+        if (std::shared_ptr<Mesh> meshPtr = mesh.lock())
+        {
+            const size_t meshIndex = meshPtr->getMeshIndex();
+            VkBuffer vertexBuffers[] = { m_vertexBuffers[meshIndex] };
+            VkDeviceSize offsets[] = { 0 };
+            vkCmdBindVertexBuffers(currentImageElement->commandBuffer, 0, 1, vertexBuffers, offsets);
+            vkCmdBindIndexBuffer(currentImageElement->commandBuffer, m_indexBuffers[meshIndex], 0, VK_INDEX_TYPE_UINT16);
+
+            vkCmdDrawIndexed(
+                currentImageElement->commandBuffer,
+                static_cast<uint32_t>(meshPtr->getIndices().size()),
+                1,
+                0,
+                0,
+                0);
+        }
+    }
 
     const auto descriptorSet = m_pipeline->getDescriptorSet(m_swapchain->getCurrentFrameIndex());
     // Bind global descriptor set
@@ -307,14 +336,6 @@ void VulkanRenderer::draw_scene()
         0,
         nullptr
     );
-
-    vkCmdDrawIndexed(
-        currentImageElement->commandBuffer,
-        static_cast<uint32_t>(m_quadMesh->getIndices().size()),
-        1,
-        0,
-        0,
-        0);
 
     vkCmdEndRendering(currentImageElement->commandBuffer);
 

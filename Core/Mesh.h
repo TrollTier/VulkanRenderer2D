@@ -11,11 +11,13 @@
 class Mesh
 {
 public:
-    Mesh(std::vector<Vertex> vertices, std::vector<uint16_t> indices);
-    const std::vector<Vertex>& getVertices() const;
-    const std::vector<uint16_t>& getIndices() const;
+    Mesh(size_t meshIndex, std::vector<Vertex> vertices, std::vector<uint16_t> indices);
+    [[nodiscard]] const std::vector<Vertex>& getVertices() const;
+    [[nodiscard]] const std::vector<uint16_t>& getIndices() const;
+    [[nodiscard]] size_t getMeshIndex() const;
 
 private:
+    size_t m_meshIndex;
     std::vector<Vertex> m_vertices;
     std::vector<uint16_t> m_indices;
 };

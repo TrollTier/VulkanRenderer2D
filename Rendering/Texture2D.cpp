@@ -195,11 +195,15 @@ void Texture2D::transitionImageLayout(
 
     vkCmdPipelineBarrier(
         commandBuffer,
-        sourceStage, destinationStage,
+        sourceStage,
+        destinationStage,
         0,
-        0, nullptr,
-        0, nullptr,
-        1, &barrier
+        0,
+        nullptr,
+        0,
+        nullptr,
+        1,
+        &barrier
     );
 
     vkEndCommandBuffer(commandBuffer);
