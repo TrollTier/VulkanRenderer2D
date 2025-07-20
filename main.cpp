@@ -19,10 +19,10 @@ int main() {
     renderer.initialize(true, vulkanWindow);
 
     const std::vector<Vertex> vertices = {
-        {{-0.5f, -0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
-        {{0.5f, -0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
-        {{0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-        {{-0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+        {{0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+        {{1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+        {{1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+        {{0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
     };
 
     const std::vector<uint16_t> indices = {
@@ -34,12 +34,18 @@ int main() {
 
     auto objects = std::vector<GameObject>{};
     objects.emplace_back(
-        glm::vec3(0.2f, 0.1f, 1),
+        0,
+        glm::vec3(0.0f, 0.0f, 0),
         quadMesh);
 
+    renderer.onGameObjectCreated(objects[0]);
+
     objects.emplace_back(
-        glm::vec3(0.5f, 0.3f, 1),
+        1,
+        glm::vec3(64.0f, 0.0f, 0),
         quadMesh);
+
+    renderer.onGameObjectCreated(objects[1]);
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();

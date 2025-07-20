@@ -4,10 +4,11 @@
 
 #include "GameObject.h"
 
-GameObject::GameObject(glm::vec3 worldPosition, std::weak_ptr<Mesh> mesh)
+GameObject::GameObject(size_t index, glm::vec3 worldPosition, std::weak_ptr<Mesh> mesh)
 {
-    m_worldPosition = std::move(worldPosition);
+    m_worldPosition = worldPosition;
     m_mesh = std::move(mesh);
+    m_index = index;
 }
 
 
@@ -19,4 +20,9 @@ const glm::vec3& GameObject::getWorldPosition() const
 std::weak_ptr<Mesh> GameObject::getMesh() const
 {
     return m_mesh;
+}
+
+size_t GameObject::getIndex() const
+{
+    return m_index;
 }

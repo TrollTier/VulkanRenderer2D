@@ -24,17 +24,27 @@ public:
     void updateAfterImageLoaded(VkDescriptorImageInfo& imageInfo);
     void updateUniformBuffer(size_t index, const UniformBufferObject& bufferObject);
 
-    const VkPipelineLayout getLayout() const
+    [[nodiscard]] VkPipelineLayout getLayout() const
     {
         return m_pipelineLayout;
     }
 
-    const VkDescriptorSet getDescriptorSet(size_t index) const
+    [[nodiscard]] VkDescriptorSet getDescriptorSet(size_t index) const
     {
         return m_descriptorSets[index];
     }
 
-    const VkPipeline getPipeline() const
+    [[nodiscard]] VkDescriptorSetLayout getDescriptorSetLayout() const
+    {
+        return m_descriptorSetLayout;
+    }
+
+    [[nodiscard]] VkDescriptorPool getDescriptorPool() const
+    {
+        return m_descriptorPool;
+    }
+
+    [[nodiscard]] VkPipeline getPipeline() const
     {
         return m_pipeline;
     }

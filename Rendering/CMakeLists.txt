@@ -18,6 +18,7 @@ add_library(Rendering
         Texture2D.cpp
         Texture2D.h
         ImageLoader.h
+        InstanceData.h
 )
 
 target_link_libraries(Rendering PRIVATE Vulkan::Vulkan)

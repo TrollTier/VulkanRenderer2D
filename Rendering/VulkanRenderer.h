@@ -7,6 +7,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "InstanceData.h"
 #include "Pipeline.h"
 #include "Swapchain.h"
 #include "Texture2D.h"
@@ -20,7 +21,8 @@ public:
     ~VulkanRenderer();
 
     void initialize(bool enableValidationLayers, VulkanWindow& window);
-    void onMeshCreated(const std::shared_ptr<Mesh> mesh);
+    void onMeshCreated(const std::shared_ptr<Mesh>& mesh);
+    void onGameObjectCreated(const GameObject& gameObject);
     void draw_scene(const std::vector<GameObject>& gameObjects);
 
 private:
@@ -41,6 +43,8 @@ private:
     std::vector<VkBuffer> m_indexBuffers {1, VK_NULL_HANDLE};
     std::vector<VkDeviceMemory> m_indexBufferMemories {1, VK_NULL_HANDLE};
 
+    std::vector<InstanceData> m_instances {1};
+
     void createBufferWithData(
         const void* srcData,
         VkDeviceSize size,
@@ -49,7 +53,7 @@ private:
         VkDeviceMemory& dstBufferMemory
     );
 
-    void updateUniformBuffer(size_t imageIndex);
+    void updateUniformBuffer(size_t imageIndex, const GameObject& gameObject, const InstanceData& instance);
     void imageToAttachmentLayout(SwapchainElement* element);
     void imageToPresentLayout(SwapchainElement* element);
 };

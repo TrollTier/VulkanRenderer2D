@@ -71,7 +71,7 @@ Pipeline::Pipeline(
     initializeDescriptorPool(
         ressources->m_physicalDevice,
         ressources->m_logicalDevice,
-        swapchainImageCount,
+        swapchainImageCount * 10000, // TODO: maybe not hard code the max amount of gameobjects
         m_descriptorPool,
         ressources->m_allocator);
 
