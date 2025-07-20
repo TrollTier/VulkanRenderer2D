@@ -66,7 +66,7 @@ Swapchain::Swapchain(std::shared_ptr<VulkanRessources> ressources)
 {
     m_ressources = ressources;
 
-VkSurfaceCapabilitiesKHR capabilities;
+    VkSurfaceCapabilitiesKHR capabilities;
     if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_ressources->m_physicalDevice, m_ressources->m_surface, &capabilities) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to query surface capabilities!");

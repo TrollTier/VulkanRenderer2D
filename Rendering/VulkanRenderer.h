@@ -35,8 +35,6 @@ private:
     std::unique_ptr<Pipeline> m_pipeline;
     std::unique_ptr<Texture2D> m_texture;
 
-    VkSampler m_sampler = VK_NULL_HANDLE;
-
     std::vector<VkBuffer> m_vertexBuffers {1, VK_NULL_HANDLE};
     std::vector<VkDeviceMemory> m_vertexBufferMemories {1, VK_NULL_HANDLE};
 
@@ -44,6 +42,8 @@ private:
     std::vector<VkDeviceMemory> m_indexBufferMemories {1, VK_NULL_HANDLE};
 
     std::vector<InstanceData> m_instances {1};
+
+    VkSampler m_sampler = VK_NULL_HANDLE;
 
     void createBufferWithData(
         const void* srcData,

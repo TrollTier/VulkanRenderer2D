@@ -22,8 +22,25 @@ VulkanRenderer::~VulkanRenderer()
 {
     const auto device = m_vulkanRessources->m_logicalDevice;
     const auto allocator = m_vulkanRessources->m_allocator;
+    const auto& descriptorPool =  m_pipeline->getDescriptorPool();
 
     vkDeviceWaitIdle(device);
+
+    for (const auto& instanceData : m_instances)
+    {
+        for (size_t i = 0; i < instanceData.descriptorSets.size(); i++)
+        {
+            vkUnmapMemory(device, instanceData.uniformBufferMemories[i]);
+            vkFreeMemory(device, instanceData.uniformBufferMemories[i], allocator);
+            vkDestroyBuffer(device, instanceData.uniformBuffers[i], allocator);
+        }
+        //
+        // vkFreeDescriptorSets(
+        //     device,
+        //     descriptorPool,
+        //     instanceData.descriptorSets.size(),
+        //     instanceData.descriptorSets.data());
+    }
 
     for (size_t i = 0; i < m_indexBuffers.size(); i++)
     {
@@ -35,7 +52,6 @@ VulkanRenderer::~VulkanRenderer()
     }
 
     vkDestroySampler(device, m_sampler, allocator);
-
 }
 
 void VulkanRenderer::initialize(
@@ -303,7 +319,7 @@ void VulkanRenderer::updateUniformBuffer(size_t imageIndex,
     ubo.model = model;
 
     memcpy(
-        instance.m_uniformBuffersMapped[imageIndex],
+        instance.uniformBuffersMapped[imageIndex],
         &ubo,
         sizeof(UniformBufferObject));
 }

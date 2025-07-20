@@ -19,6 +19,11 @@ public:
     [[nodiscard]] std::weak_ptr<Mesh> getMesh() const;
     [[nodiscard]] size_t getIndex() const;
 
+    void moveBy(const glm::vec3& delta)
+    {
+        m_worldPosition += delta;
+    }
+
 private:
     glm::vec3 m_worldPosition{};
     std::weak_ptr<Mesh> m_mesh;

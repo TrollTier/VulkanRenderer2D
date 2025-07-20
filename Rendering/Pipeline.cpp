@@ -48,6 +48,13 @@ Pipeline::~Pipeline()
     const auto device = m_vulkanRessources->m_logicalDevice;
     const auto allocator = m_vulkanRessources->m_allocator;
 
+    for (size_t i = 0; i < m_uniformBuffers.size(); i++)
+    {
+        vkUnmapMemory(device, m_uniformBufferMemories[i]);
+        vkFreeMemory(device, m_uniformBufferMemories[i], allocator);
+        vkDestroyBuffer(device, m_uniformBuffers[i], allocator);
+    }
+
     vkDestroyDescriptorPool(device, m_descriptorPool, allocator);
     vkDestroyPipeline(device, m_pipeline, allocator);
     vkDestroyPipelineLayout(device, m_pipelineLayout, allocator);
