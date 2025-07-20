@@ -34,12 +34,6 @@ VulkanRenderer::~VulkanRenderer()
             vkFreeMemory(device, instanceData.uniformBufferMemories[i], allocator);
             vkDestroyBuffer(device, instanceData.uniformBuffers[i], allocator);
         }
-        //
-        // vkFreeDescriptorSets(
-        //     device,
-        //     descriptorPool,
-        //     instanceData.descriptorSets.size(),
-        //     instanceData.descriptorSets.data());
     }
 
     for (size_t i = 0; i < m_indexBuffers.size(); i++)
@@ -91,7 +85,7 @@ void VulkanRenderer::initialize(
     imageInfo.imageView = m_texture->getImageView();
     imageInfo.sampler = m_sampler;
 
-    m_pipeline->updateAfterImageLoaded(imageInfo);
+    updateAfterImageLoaded(imageInfo);
 }
 
 void VulkanRenderer::onMeshCreated(const std::shared_ptr<Mesh>& mesh)
@@ -221,6 +215,55 @@ void VulkanRenderer::onGameObjectCreated(const GameObject& gameObject)
     };
 
     m_instances[index] = instance;
+}
+
+void VulkanRenderer::updateAfterImageLoaded(VkDescriptorImageInfo &imageInfo)
+{
+    const size_t swapchainImages = m_swapchain->getImageCount();
+
+    for (size_t instanceIndex = 0; instanceIndex < m_instances.size(); instanceIndex++)
+    {
+        const InstanceData& instance = m_instances[instanceIndex];
+
+        if (instance.descriptorSets.empty()) // Reserved, but not set
+        {
+            continue;
+        }
+
+        for (size_t i = 0; i < swapchainImages; i++)
+        {
+            const auto set = instance.descriptorSets[i];
+
+            VkDescriptorBufferInfo bufferInfo{};
+            bufferInfo.buffer = instance.uniformBuffers[i];
+            bufferInfo.offset = 0;
+            bufferInfo.range = sizeof(UniformBufferObject);
+
+            std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+            descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[0].dstSet = set;
+            descriptorWrites[0].dstBinding = 0;
+            descriptorWrites[0].dstArrayElement = 0;
+            descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWrites[0].descriptorCount = 1;
+            descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+            descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[1].dstSet = set;
+            descriptorWrites[1].dstBinding = 1;
+            descriptorWrites[1].dstArrayElement = 0;
+            descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            descriptorWrites[1].descriptorCount = 1;
+            descriptorWrites[1].pImageInfo = &imageInfo;
+
+            vkUpdateDescriptorSets(
+                m_vulkanRessources->m_logicalDevice,
+                static_cast<uint32_t>(descriptorWrites.size()),
+                descriptorWrites.data(),
+                0,
+                nullptr);
+        }
+    }
 }
 
 void VulkanRenderer::createBufferWithData(

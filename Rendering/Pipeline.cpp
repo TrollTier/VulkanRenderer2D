@@ -8,7 +8,6 @@
 #include <fstream>
 
 #include "Descriptors.h"
-#include "UniformBufferObject.h"
 #include "VulkanHelpers.h"
 #include "../Core/Vertex.h"
 
@@ -48,13 +47,6 @@ Pipeline::~Pipeline()
     const auto device = m_vulkanRessources->m_logicalDevice;
     const auto allocator = m_vulkanRessources->m_allocator;
 
-    for (size_t i = 0; i < m_uniformBuffers.size(); i++)
-    {
-        vkUnmapMemory(device, m_uniformBufferMemories[i]);
-        vkFreeMemory(device, m_uniformBufferMemories[i], allocator);
-        vkDestroyBuffer(device, m_uniformBuffers[i], allocator);
-    }
-
     vkDestroyDescriptorPool(device, m_descriptorPool, allocator);
     vkDestroyPipeline(device, m_pipeline, allocator);
     vkDestroyPipelineLayout(device, m_pipelineLayout, allocator);
@@ -88,38 +80,6 @@ Pipeline::Pipeline(
     allocInfo.descriptorPool = m_descriptorPool;
     allocInfo.descriptorSetCount = 2;
     allocInfo.pSetLayouts = layouts.data();
-
-    m_descriptorSets.resize(allocInfo.descriptorSetCount);
-
-    if (vkAllocateDescriptorSets(ressources->m_logicalDevice, &allocInfo, m_descriptorSets.data()) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to allocate descriptor sets!");
-    }
-
-    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-
-    m_uniformBuffers.resize(swapchainImageCount);
-    m_uniformBufferMemories.resize(swapchainImageCount);
-    m_uniformBuffersMapped.resize(swapchainImageCount);
-
-    for (size_t i = 0; i < swapchainImageCount; i++) {
-        VulkanHelpers::createBuffer(
-            ressources->m_logicalDevice,
-            ressources->m_physicalDevice,
-            bufferSize,
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            m_uniformBuffers[i],
-            m_uniformBufferMemories[i]);
-
-        vkMapMemory(
-            ressources->m_logicalDevice,
-            m_uniformBufferMemories[i],
-            0,
-            bufferSize,
-            0,
-            &m_uniformBuffersMapped[i]);
-    }
 
     auto vertShaderCode = readFile(vertexShaderPath);
     auto fragShaderCode = readFile(fragmentShaderPath);
@@ -206,7 +166,7 @@ Pipeline::Pipeline(
     dynamicState.pDynamicStates = dynamicStates.data();
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-    pipelineLayoutInfo.setLayoutCount = m_descriptorSets.size();
+    pipelineLayoutInfo.setLayoutCount = layouts.size();
     pipelineLayoutInfo.pSetLayouts = layouts.data();
 
     if (vkCreatePipelineLayout(
@@ -253,48 +213,6 @@ Pipeline::Pipeline(
 
     vkDestroyShaderModule(ressources->m_logicalDevice, vertShaderModule, ressources->m_allocator);
     vkDestroyShaderModule(ressources->m_logicalDevice, fragShaderModule, ressources->m_allocator);
-}
-
-void Pipeline::updateAfterImageLoaded(VkDescriptorImageInfo &imageInfo)
-{
-    for (size_t i = 0; i < m_descriptorSets.size(); i++)
-    {
-        const auto set = m_descriptorSets[i];
-
-        VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = m_uniformBuffers[i];
-        bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(UniformBufferObject);
-
-        std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
-        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[0].dstSet = set;
-        descriptorWrites[0].dstBinding = 0;
-        descriptorWrites[0].dstArrayElement = 0;
-        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[0].descriptorCount = 1;
-        descriptorWrites[0].pBufferInfo = &bufferInfo;
-
-        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[1].dstSet = set;
-        descriptorWrites[1].dstBinding = 1;
-        descriptorWrites[1].dstArrayElement = 0;
-        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[1].descriptorCount = 1;
-        descriptorWrites[1].pImageInfo = &imageInfo;
-
-        vkUpdateDescriptorSets(
-            m_vulkanRessources->m_logicalDevice,
-            static_cast<uint32_t>(descriptorWrites.size()),
-            descriptorWrites.data(),
-            0,
-            nullptr);
-    }
-}
-
-void Pipeline::updateUniformBuffer(size_t index, const UniformBufferObject &bufferObject)
-{
-    memcpy(m_uniformBuffersMapped[index], &bufferObject, sizeof(bufferObject));
 }
 
 

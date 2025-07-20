@@ -29,11 +29,6 @@ public:
         return m_pipelineLayout;
     }
 
-    [[nodiscard]] VkDescriptorSet getDescriptorSet(size_t index) const
-    {
-        return m_descriptorSets[index];
-    }
-
     [[nodiscard]] VkDescriptorSetLayout getDescriptorSetLayout() const
     {
         return m_descriptorSetLayout;
@@ -54,11 +49,6 @@ private:
 
     VkDescriptorSetLayout m_descriptorSetLayout = VK_NULL_HANDLE;
     VkDescriptorPool m_descriptorPool = VK_NULL_HANDLE;
-    std::vector<VkDescriptorSet> m_descriptorSets{};
-
-    std::vector<VkBuffer> m_uniformBuffers;
-    std::vector<VkDeviceMemory> m_uniformBufferMemories;
-    std::vector<void*> m_uniformBuffersMapped;
 
     VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
     VkPipeline m_pipeline;

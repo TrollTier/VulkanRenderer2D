@@ -45,6 +45,8 @@ private:
 
     VkSampler m_sampler = VK_NULL_HANDLE;
 
+    void updateAfterImageLoaded(VkDescriptorImageInfo &imageInfo);
+
     void createBufferWithData(
         const void* srcData,
         VkDeviceSize size,
