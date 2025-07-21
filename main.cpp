@@ -77,6 +77,8 @@ int main()
 
         glfwPollEvents();
 
+        const auto startOfUpdate = std::chrono::high_resolution_clock::now();
+
         for (auto& object : objects)
         {
             const auto randomValueX = distribution(generator);
@@ -84,11 +86,21 @@ int main()
             object.moveBy(glm::vec3(randomValueX, randomValueY, 0));
         }
 
+        const auto endOfUpdate = std::chrono::high_resolution_clock::now();
+        const auto startOfRender = std::chrono::high_resolution_clock::now();
+
         renderer.draw_scene(objects);
+
+        const auto endOfRender = std::chrono::high_resolution_clock::now();
 
         const auto endOfFrame = std::chrono::high_resolution_clock::now();
         const auto frameDuration = endOfFrame - startOfFrame;
-        std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(frameDuration).count() << std::endl;
+        const auto updateDuration = endOfUpdate - startOfUpdate;
+        const auto renderDuration = endOfRender - startOfRender;
+
+        std::cout << "Frame:" << std::chrono::duration_cast<std::chrono::milliseconds>(frameDuration).count() << std::endl;
+        std::cout << "Update:" << std::chrono::duration_cast<std::chrono::milliseconds>(updateDuration).count() << std::endl;
+        std::cout << "Render:" << std::chrono::duration_cast<std::chrono::milliseconds>(renderDuration).count() << std::endl;
     }
 
     return 0;
