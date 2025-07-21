@@ -9,15 +9,17 @@
 #include <utility>
 
 #include "Mesh.h"
+#include "Sprite.h"
 
 class GameObject
 {
 public:
-    GameObject(size_t index, glm::vec3 worldPosition, std::weak_ptr<Mesh> mesh);
+    GameObject(size_t index, glm::vec3 worldPosition, std::weak_ptr<Mesh> mesh, Sprite sprite);
 
     [[nodiscard]] const glm::vec3& getWorldPosition() const;
     [[nodiscard]] std::weak_ptr<Mesh> getMesh() const;
     [[nodiscard]] size_t getIndex() const;
+    [[nodiscard]] const Sprite& getSprite() const;
 
     void moveBy(const glm::vec3& delta)
     {
@@ -25,9 +27,10 @@ public:
     }
 
 private:
+    size_t m_index;
     glm::vec3 m_worldPosition{};
     std::weak_ptr<Mesh> m_mesh;
-    size_t m_index;
+    Sprite m_sprite;
 };
 
 #endif //GAMEOBJECT_H

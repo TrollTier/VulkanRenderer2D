@@ -16,7 +16,7 @@ public:
     Texture2D(std::shared_ptr<VulkanRessources> vulkanRessources, const char* imagePath);
     ~Texture2D();
 
-    const VkImageView getImageView() const
+    [[nodiscard]] VkImageView getImageView() const
     {
         return m_textureImageView;
     }

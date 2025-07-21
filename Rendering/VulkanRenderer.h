@@ -22,6 +22,7 @@ public:
 
     void initialize(bool enableValidationLayers, VulkanWindow& window);
     void onMeshCreated(const std::shared_ptr<Mesh>& mesh);
+    size_t loadTexture(const char* texturePath);
     void onGameObjectCreated(const GameObject& gameObject);
     void draw_scene(const std::vector<GameObject>& gameObjects);
 
@@ -33,7 +34,7 @@ private:
     std::shared_ptr<VulkanRessources> m_vulkanRessources;
     std::unique_ptr<Swapchain> m_swapchain;
     std::unique_ptr<Pipeline> m_pipeline;
-    std::unique_ptr<Texture2D> m_texture;
+    std::vector<std::unique_ptr<Texture2D>> m_textures;
 
     std::vector<VkBuffer> m_vertexBuffers {1, VK_NULL_HANDLE};
     std::vector<VkDeviceMemory> m_vertexBufferMemories {1, VK_NULL_HANDLE};
@@ -44,8 +45,6 @@ private:
     std::vector<InstanceData> m_instances {1};
 
     VkSampler m_sampler = VK_NULL_HANDLE;
-
-    void updateAfterImageLoaded(VkDescriptorImageInfo &imageInfo);
 
     void createBufferWithData(
         const void* srcData,

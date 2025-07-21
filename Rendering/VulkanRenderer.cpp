@@ -77,16 +77,14 @@ void VulkanRenderer::initialize(
         m_vulkanRessources->m_logicalDevice,
         &m_sampler,
         m_vulkanRessources->m_allocator);
-
-    m_texture = std::make_unique<Texture2D>(m_vulkanRessources, "../Assets/texture.jpg");
-
-    VkDescriptorImageInfo imageInfo{};
-    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    imageInfo.imageView = m_texture->getImageView();
-    imageInfo.sampler = m_sampler;
-
-    updateAfterImageLoaded(imageInfo);
 }
+
+size_t VulkanRenderer::loadTexture(const char *texturePath)
+{
+    m_textures.emplace_back(std::make_unique<Texture2D>(m_vulkanRessources, texturePath));
+    return m_textures.size() - 1;
+}
+
 
 void VulkanRenderer::onMeshCreated(const std::shared_ptr<Mesh>& mesh)
 {
@@ -152,7 +150,7 @@ void VulkanRenderer::onGameObjectCreated(const GameObject& gameObject)
 
     VkDescriptorImageInfo imageInfo{};
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    imageInfo.imageView = m_texture->getImageView();
+    imageInfo.imageView = m_textures[gameObject.getSprite().textureIndex]->getImageView();
     imageInfo.sampler = m_sampler;
 
     for (size_t i = 0; i < imageCount; i++)
@@ -215,55 +213,6 @@ void VulkanRenderer::onGameObjectCreated(const GameObject& gameObject)
     };
 
     m_instances[index] = instance;
-}
-
-void VulkanRenderer::updateAfterImageLoaded(VkDescriptorImageInfo &imageInfo)
-{
-    const size_t swapchainImages = m_swapchain->getImageCount();
-
-    for (size_t instanceIndex = 0; instanceIndex < m_instances.size(); instanceIndex++)
-    {
-        const InstanceData& instance = m_instances[instanceIndex];
-
-        if (instance.descriptorSets.empty()) // Reserved, but not set
-        {
-            continue;
-        }
-
-        for (size_t i = 0; i < swapchainImages; i++)
-        {
-            const auto set = instance.descriptorSets[i];
-
-            VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = instance.uniformBuffers[i];
-            bufferInfo.offset = 0;
-            bufferInfo.range = sizeof(UniformBufferObject);
-
-            std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
-            descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[0].dstSet = set;
-            descriptorWrites[0].dstBinding = 0;
-            descriptorWrites[0].dstArrayElement = 0;
-            descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrites[0].descriptorCount = 1;
-            descriptorWrites[0].pBufferInfo = &bufferInfo;
-
-            descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[1].dstSet = set;
-            descriptorWrites[1].dstBinding = 1;
-            descriptorWrites[1].dstArrayElement = 0;
-            descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites[1].descriptorCount = 1;
-            descriptorWrites[1].pImageInfo = &imageInfo;
-
-            vkUpdateDescriptorSets(
-                m_vulkanRessources->m_logicalDevice,
-                static_cast<uint32_t>(descriptorWrites.size()),
-                descriptorWrites.data(),
-                0,
-                nullptr);
-        }
-    }
 }
 
 void VulkanRenderer::createBufferWithData(
