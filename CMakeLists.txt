@@ -15,7 +15,9 @@ add_executable(FireEmblemClone main.cpp
         Core/Mesh.h
         Core/GameObject.cpp
         Core/GameObject.h
-        Core/Sprite.h)
+        Core/Sprite.h
+        Core/MeshLoader.cpp
+        Core/MeshLoader.h)
 
 add_subdirectory(include/glfw-3.4)
 add_subdirectory(include/stb)
