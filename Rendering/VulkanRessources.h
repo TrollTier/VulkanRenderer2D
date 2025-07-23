@@ -23,14 +23,22 @@ public:
     uint32_t m_graphicsQueueFamilyIndex = 0;
     VkCommandPool m_commandPool = VK_NULL_HANDLE;
 
+    explicit VulkanRessources(VulkanWindow& window): m_window(window) {}
     ~VulkanRessources();
+
     void initialize(
         bool enableValidationLayers,
         const std::vector<const char*>& validationLayers,
-        const std::vector<const char*>& instanceExtensions,
-        VulkanWindow& window);
+        const std::vector<const char*>& instanceExtensions);
+
+    const VulkanWindow& getWindow() const
+    {
+        return m_window;
+    }
 
 private:
+    VulkanWindow& m_window;
+
     const std::vector<const char*> DEVICE_EXTENSIONS = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };

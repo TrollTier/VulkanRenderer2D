@@ -22,12 +22,11 @@ VulkanRessources::~VulkanRessources()
 void VulkanRessources::initialize(
     bool enableValidationLayers,
     const std::vector<const char*>& validationLayers,
-    const std::vector<const char*>& instanceExtensions,
-    VulkanWindow& window)
+    const std::vector<const char*>& instanceExtensions)
 {
     initializeInstance(enableValidationLayers, validationLayers, instanceExtensions);
 
-    if (window.createSurface(m_instance, &m_surface) != VK_SUCCESS)
+    if (m_window.createSurface(m_instance, &m_surface) != VK_SUCCESS)
     {
         throw std::runtime_error("Failed to create Vulkan surface");
     }

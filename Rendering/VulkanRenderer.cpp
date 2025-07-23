@@ -57,12 +57,11 @@ void VulkanRenderer::initialize(
     instanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instanceExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
 
-    m_vulkanRessources = std::make_shared<VulkanRessources>();
+    m_vulkanRessources = std::make_shared<VulkanRessources>(window);
     m_vulkanRessources->initialize(
         enableValidationLayers,
         m_validationLayers,
-        instanceExtensions,
-        window);
+        instanceExtensions);
 
     m_swapchain = std::make_unique<Swapchain>(m_vulkanRessources);
     m_pipeline = std::make_unique<Pipeline>(
@@ -331,7 +330,15 @@ void VulkanRenderer::draw_scene(const std::vector<GameObject>& gameObjects)
         VK_NULL_HANDLE,
         &imageIndex);
 
-    // TODO: recreate swapchain if required
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+    {
+        vkDeviceWaitIdle(m_vulkanRessources->m_logicalDevice);
+
+        m_swapchain.reset();
+        m_swapchain = std::make_unique<Swapchain>(m_vulkanRessources);
+        return;
+    }
+
     if (result != VK_SUCCESS)
     {
         throw std::runtime_error("failed to acquire swap chain image!");
@@ -490,7 +497,15 @@ void VulkanRenderer::draw_scene(const std::vector<GameObject>& gameObjects)
 
     result = vkQueuePresentKHR(m_vulkanRessources->m_graphicsQueue, &presentInfo);
 
-    // TODO: recreate swapchain logic for resize or similar
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+    {
+        vkDeviceWaitIdle(m_vulkanRessources->m_logicalDevice);
+
+        m_swapchain.reset();
+        m_swapchain = std::make_unique<Swapchain>(m_vulkanRessources);
+        return;
+    }
+
     if (result != VK_SUCCESS)
     {
         throw std::runtime_error("failed to present image!");

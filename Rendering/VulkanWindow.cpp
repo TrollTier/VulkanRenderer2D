@@ -30,4 +30,19 @@ void VulkanWindow::fillRequiredInstanceExtensions(std::vector<const char *>& ext
     }
 }
 
+WindowExtent VulkanWindow::getWindowExtent() const
+{
+    int width = 0;
+    int height = 0;
+    glfwGetFramebufferSize(m_window, &width, &height);
+
+    while (width == 0 || height == 0) {
+        glfwGetFramebufferSize(m_window, &width, &height);
+        glfwWaitEvents();
+    }
+
+    return WindowExtent(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+}
+
+
 
