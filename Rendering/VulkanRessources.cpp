@@ -26,7 +26,7 @@ void VulkanRessources::initialize(
 {
     initializeInstance(enableValidationLayers, validationLayers, instanceExtensions);
 
-    if (m_window.createSurface(m_instance, &m_surface) != VK_SUCCESS)
+    if (m_window->createSurface(m_instance, &m_surface) != VK_SUCCESS)
     {
         throw std::runtime_error("Failed to create Vulkan surface");
     }

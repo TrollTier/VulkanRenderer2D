@@ -50,10 +50,10 @@ VulkanRenderer::~VulkanRenderer()
 
 void VulkanRenderer::initialize(
     bool enableValidationLayers,
-    VulkanWindow& window)
+    std::shared_ptr<VulkanWindow> window)
 {
     std::vector<const char*> instanceExtensions{};
-    window.fillRequiredInstanceExtensions(instanceExtensions);
+    window->fillRequiredInstanceExtensions(instanceExtensions);
     instanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instanceExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
 

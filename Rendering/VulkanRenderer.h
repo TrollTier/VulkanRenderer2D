@@ -20,7 +20,7 @@ class VulkanRenderer
 public:
     ~VulkanRenderer();
 
-    void initialize(bool enableValidationLayers, VulkanWindow& window);
+    void initialize(bool enableValidationLayers, std::shared_ptr<VulkanWindow> window);
     void onMeshCreated(const std::shared_ptr<Mesh>& mesh);
     size_t loadTexture(const char* texturePath);
     void onGameObjectCreated(const GameObject& gameObject);

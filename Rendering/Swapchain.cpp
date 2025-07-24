@@ -72,7 +72,7 @@ Swapchain::Swapchain(std::shared_ptr<VulkanRessources> ressources)
         throw std::runtime_error("failed to query surface capabilities!");
     }
 
-    const auto windowExtent = ressources->getWindow().getWindowExtent();
+    const auto windowExtent = ressources->getWindow()->getWindowExtent();
 
     m_width = std::clamp(windowExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
     m_height = std::clamp(windowExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
