@@ -6,8 +6,6 @@ set(CMAKE_CXX_STANDARD 20)
 find_package(Vulkan REQUIRED)
 
 add_executable(FireEmblemClone main.cpp
-        Level.cpp
-        Level.h
         Core/Timestep.h
         Core/BaseTypes.h
         include/stb/stb_image.cpp
