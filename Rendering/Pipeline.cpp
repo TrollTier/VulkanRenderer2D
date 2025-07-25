@@ -7,7 +7,6 @@
 #include <array>
 #include <fstream>
 
-#include "Descriptors.h"
 #include "VulkanHelpers.h"
 #include "../Core/Vertex.h"
 
@@ -62,17 +61,8 @@ Pipeline::Pipeline(
 {
     m_vulkanRessources = ressources;
 
-    initializeDescriptorSetLayout(
-        ressources->m_logicalDevice,
-        m_descriptorSetLayout,
-        ressources->m_allocator);
-
-    initializeDescriptorPool(
-        ressources->m_physicalDevice,
-        ressources->m_logicalDevice,
-        swapchainImageCount * 10000, // TODO: maybe not hard code the max amount of gameobjects
-        m_descriptorPool,
-        ressources->m_allocator);
+    initializeDescriptorSetLayout();
+    initializeDescriptorPool(swapchainImageCount);
 
     std::vector<VkDescriptorSetLayout> layouts(2, m_descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -214,5 +204,72 @@ Pipeline::Pipeline(
     vkDestroyShaderModule(ressources->m_logicalDevice, vertShaderModule, ressources->m_allocator);
     vkDestroyShaderModule(ressources->m_logicalDevice, fragShaderModule, ressources->m_allocator);
 }
+
+void Pipeline::initializeDescriptorSetLayout()
+{
+    VkDescriptorSetLayoutBinding uboLayoutBinding{};
+    uboLayoutBinding.binding = 0;
+    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uboLayoutBinding.descriptorCount = 1;
+    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+    VkDescriptorSetLayoutBinding samplerBinding{};
+    samplerBinding.binding = 1;
+    samplerBinding.descriptorCount = 1;
+    samplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    samplerBinding.pImmutableSamplers = nullptr;
+    samplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerBinding };
+
+    VkDescriptorSetLayoutCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    createInfo.pBindings = bindings.data();
+
+    const VkResult result = vkCreateDescriptorSetLayout(
+        m_vulkanRessources->m_logicalDevice,
+        &createInfo,
+        m_vulkanRessources->m_allocator,
+        &m_descriptorSetLayout);
+
+    if (result != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create descriptor set layout");
+    }
+}
+
+void Pipeline::initializeDescriptorPool(size_t swapchainImageCount)
+{
+    // TODO: maybe not hard code the max amount of gameobjects
+    const size_t maxSets = swapchainImageCount * 10000;
+
+    VkPhysicalDeviceProperties properties{};
+    vkGetPhysicalDeviceProperties(m_vulkanRessources->m_physicalDevice, &properties);
+
+    std::array<VkDescriptorPoolSize, 2> poolSizes{};
+    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSizes[0].descriptorCount = maxSets;
+    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSizes[1].descriptorCount = maxSets;
+
+    VkDescriptorPoolCreateInfo descriptorPoolInfo{};
+    descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    descriptorPoolInfo.maxSets = maxSets;
+    descriptorPoolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+    descriptorPoolInfo.pPoolSizes = poolSizes.data();
+
+    const VkResult result = vkCreateDescriptorPool(
+        m_vulkanRessources->m_logicalDevice,
+        &descriptorPoolInfo,
+        m_vulkanRessources->m_allocator,
+        &m_descriptorPool);
+
+    if (result != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor pool");
+    }
+}
+
+
 
 

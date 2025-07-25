@@ -52,6 +52,9 @@ private:
 
     VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
     VkPipeline m_pipeline;
+
+    void initializeDescriptorSetLayout();
+    void initializeDescriptorPool(size_t swapchainImageCount);
 };
 
 #endif //PIPELINE_H
