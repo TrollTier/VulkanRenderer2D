@@ -11,6 +11,7 @@
 
 #include <iostream>
 
+#include "CameraConstants.h"
 #include "VulkanRessources.h"
 #include "VulkanWindow.h"
 #include "../include/glfw-3.4/include/GLFW/glfw3native.h"
@@ -315,14 +316,8 @@ void VulkanRenderer::createBufferWithData(
     vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
 
-void VulkanRenderer::updateUniformBuffer(size_t imageIndex,
-                                         const GameObject& gameObject,
-                                         const InstanceData& instance) {
-    UniformBufferObject ubo{};
-    glm::mat4 model =
-        glm::translate(glm::mat4(1.0f), gameObject.getWorldPosition()) *
-        glm::scale(glm::mat4(1), glm::vec3(64.0f, 64.0f, 1.0f));
-
+void VulkanRenderer::updateCamera(VkCommandBuffer commandBuffer)
+{
     glm::vec3 eye    = glm::vec3(0.0f, 0.0f, 1.0f);
     glm::vec3 center = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 up     = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -334,9 +329,29 @@ void VulkanRenderer::updateUniformBuffer(size_t imageIndex,
         0.0f,
         (float)m_swapchain->m_height);
 
-    ubo.projection = projection;
-    ubo.view = view;
-    ubo.model = model;
+    const auto constants = CameraConstants
+    {
+        projection * view
+    };
+
+    vkCmdPushConstants(
+        commandBuffer,
+        m_pipeline->getLayout(),
+        VK_SHADER_STAGE_VERTEX_BIT,
+        0,
+        sizeof(CameraConstants),
+        &constants);
+}
+
+void VulkanRenderer::updateUniformBuffer(size_t imageIndex,
+                                         const GameObject& gameObject,
+                                         const InstanceData& instance) {
+    UniformBufferObject ubo{};
+    glm::mat4 model =
+        glm::translate(glm::mat4(1.0f), gameObject.getWorldPosition()) *
+        glm::scale(glm::mat4(1), glm::vec3(64.0f, 64.0f, 1.0f));
+
+    ubo.modelMatrix = model;
 
     memcpy(
         instance.uniformBuffersMapped[imageIndex],
@@ -447,6 +462,8 @@ void VulkanRenderer::draw_scene(const Map& map, const World& world)
         currentImageElement->commandBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         m_pipeline->getPipeline());
+
+    updateCamera(currentImageElement->commandBuffer);
 
     const auto& gameObjects = world.getGameObjects();
 

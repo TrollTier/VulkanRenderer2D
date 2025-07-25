@@ -59,6 +59,7 @@ private:
         VkDeviceMemory& dstBufferMemory
     );
 
+    void updateCamera(VkCommandBuffer commandBuffer);
     void updateUniformBuffer(size_t imageIndex, const GameObject& gameObject, const InstanceData& instance);
     void imageToAttachmentLayout(SwapchainElement* element);
     void imageToPresentLayout(SwapchainElement* element);

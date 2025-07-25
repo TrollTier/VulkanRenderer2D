@@ -7,6 +7,7 @@
 #include <array>
 #include <fstream>
 
+#include "CameraConstants.h"
 #include "VulkanHelpers.h"
 #include "../Core/Vertex.h"
 
@@ -155,9 +156,16 @@ Pipeline::Pipeline(
     dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicState.pDynamicStates = dynamicStates.data();
 
+    VkPushConstantRange cameraConstantsRange{};
+    cameraConstantsRange.offset = 0;
+    cameraConstantsRange.size = sizeof(CameraConstants);
+    cameraConstantsRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
     pipelineLayoutInfo.setLayoutCount = layouts.size();
     pipelineLayoutInfo.pSetLayouts = layouts.data();
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pPushConstantRanges = &cameraConstantsRange;
 
     if (vkCreatePipelineLayout(
             ressources->m_logicalDevice,
