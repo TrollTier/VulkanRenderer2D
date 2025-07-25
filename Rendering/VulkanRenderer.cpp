@@ -344,7 +344,7 @@ void VulkanRenderer::updateUniformBuffer(size_t imageIndex,
         sizeof(UniformBufferObject));
 }
 
-void VulkanRenderer::draw_scene(const std::vector<GameObject>& gameObjects)
+void VulkanRenderer::draw_scene(const Map& map, const World& world)
 {
     const auto currentFrameElement = m_swapchain->getCurrentFrame();
 
@@ -447,6 +447,8 @@ void VulkanRenderer::draw_scene(const std::vector<GameObject>& gameObjects)
         currentImageElement->commandBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         m_pipeline->getPipeline());
+
+    const auto& gameObjects = world.getGameObjects();
 
     for (const auto& gameObject : gameObjects)
     {

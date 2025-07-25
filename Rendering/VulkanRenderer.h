@@ -13,7 +13,9 @@
 #include "Texture2D.h"
 #include "VulkanRessources.h"
 #include "../Core/GameObject.h"
+#include "../Core/Map.h"
 #include "../Core/Mesh.h"
+#include "../Core/World.h"
 
 class VulkanRenderer
 {
@@ -24,7 +26,8 @@ public:
     void onMeshCreated(const std::shared_ptr<Mesh>& mesh);
     size_t loadTexture(const char* texturePath);
     void onGameObjectCreated(const GameObject& gameObject);
-    void draw_scene(const std::vector<GameObject>& gameObjects);
+
+    void draw_scene(const Map& map, const World& world);
 
 private:
     const std::vector<const char*> m_validationLayers = {

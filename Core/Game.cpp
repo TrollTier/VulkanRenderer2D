@@ -81,7 +81,7 @@ void Game::RunLoop()
         const auto endOfUpdate = std::chrono::high_resolution_clock::now();
         const auto startOfRender = std::chrono::high_resolution_clock::now();
 
-        m_renderer->draw_scene(m_world->getGameObjects());
+        m_renderer->draw_scene(*m_map, *m_world);
 
         const auto endOfRender = std::chrono::high_resolution_clock::now();
 
