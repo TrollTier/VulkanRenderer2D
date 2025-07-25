@@ -243,7 +243,6 @@ void VulkanRenderer::initializeSampler()
     }
 }
 
-
 void VulkanRenderer::createBufferWithData(
     const void *srcData,
     VkDeviceSize size,

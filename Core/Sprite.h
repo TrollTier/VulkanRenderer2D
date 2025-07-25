@@ -5,6 +5,8 @@
 #ifndef SPRITE_H
 #define SPRITE_H
 
+#include <cstddef>
+
 typedef struct
 {
     size_t textureIndex{0};

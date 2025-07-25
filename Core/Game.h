@@ -5,6 +5,7 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include "Map.h"
 #include "MeshLoader.h"
 #include "World.h"
 #include "../include/glfw-3.4/include/GLFW/glfw3.h"
@@ -24,6 +25,8 @@ private:
     std::unique_ptr<VulkanRenderer> m_renderer;
     std::unique_ptr<World> m_world;
     std::unique_ptr<MeshLoader> m_meshLoader;
+    std::unique_ptr<Map> m_map;
+    std::vector<size_t> m_textureIndices;
 
     static void glfwMouseButtonHandler(GLFWwindow* window, int button, int action, int mods);
 };
