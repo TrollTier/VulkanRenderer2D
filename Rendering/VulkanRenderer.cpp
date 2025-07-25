@@ -4,7 +4,6 @@
 #include "VulkanHelpers.h"
 #include <fstream>
 #include "../Core/Vertex.h"
-#include "Sampler.h"
 #include "Swapchain.h"
 
 #define GLFW_EXPOSE_NATIVE_WIN32
@@ -71,11 +70,7 @@ void VulkanRenderer::initialize(
         m_swapchain->getImageCount(),
         m_swapchain->m_format.format);
 
-    initializeSampler(
-        m_vulkanRessources->m_physicalDevice,
-        m_vulkanRessources->m_logicalDevice,
-        &m_sampler,
-        m_vulkanRessources->m_allocator);
+    initializeSampler();
 }
 
 size_t VulkanRenderer::loadTexture(const char *texturePath)
@@ -213,6 +208,41 @@ void VulkanRenderer::onGameObjectCreated(const GameObject& gameObject)
 
     m_instances[index] = instance;
 }
+
+void VulkanRenderer::initializeSampler()
+{
+    VkPhysicalDeviceProperties properties{};
+    vkGetPhysicalDeviceProperties(m_vulkanRessources->m_physicalDevice, &properties);
+
+    VkSamplerCreateInfo samplerInfo{};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = VK_FILTER_LINEAR;
+    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.anisotropyEnable = VK_TRUE;
+    samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable = VK_FALSE;
+    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.mipLodBias = 0.0f;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = 0.0f;
+
+    const VkResult result = vkCreateSampler(
+        m_vulkanRessources->m_logicalDevice,
+        &samplerInfo,
+        m_vulkanRessources->m_allocator,
+        &m_sampler);
+
+    if (result != VK_SUCCESS) {
+        throw std::runtime_error("failed to create texture sampler!");
+    }
+}
+
 
 void VulkanRenderer::createBufferWithData(
     const void *srcData,

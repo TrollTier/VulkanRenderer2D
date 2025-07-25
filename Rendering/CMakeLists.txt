@@ -2,7 +2,6 @@ add_library(Rendering
     VulkanRenderer.cpp
         VulkanHelpers.h
         ../Core/Vertex.h
-        Sampler.h
         Swapchain.h
         Swapchain.cpp
         SwapchainElement.h

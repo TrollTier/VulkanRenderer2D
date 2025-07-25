@@ -46,6 +46,8 @@ private:
 
     VkSampler m_sampler = VK_NULL_HANDLE;
 
+    void initializeSampler();
+
     void createBufferWithData(
         const void* srcData,
         VkDeviceSize size,
