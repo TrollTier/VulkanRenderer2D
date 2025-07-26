@@ -95,7 +95,6 @@ void VulkanRenderer::initializeDefaultMeshes()
     onMeshCreated(*m_meshes[m_meshes.size() - 1]);
 }
 
-
 size_t VulkanRenderer::loadTexture(const char *texturePath)
 {
     m_textures.emplace_back(std::make_unique<Texture2D>(m_vulkanRessources, texturePath));

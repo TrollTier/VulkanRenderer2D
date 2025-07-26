@@ -21,9 +21,6 @@ public:
         size_t swapchainImageCount,
         VkFormat swapchainImageFormat);
 
-    void updateAfterImageLoaded(VkDescriptorImageInfo& imageInfo);
-    void updateUniformBuffer(size_t index, const ObjectPushConstants& bufferObject);
-
     [[nodiscard]] VkPipelineLayout getLayout() const
     {
         return m_pipelineLayout;
