@@ -11,12 +11,14 @@ add_library(Rendering
         VulkanWindow.h
         Pipeline.cpp
         Pipeline.h
-        UniformBufferObject.h
+        ObjectPushConstants.h
         Texture2D.cpp
         Texture2D.h
         ImageLoader.h
         InstanceData.h
-        CameraConstants.h
+        CameraUniformData.h
+        Buffer.cpp
+        Buffer.h
 )
 
 target_link_libraries(Rendering PRIVATE Vulkan::Vulkan)

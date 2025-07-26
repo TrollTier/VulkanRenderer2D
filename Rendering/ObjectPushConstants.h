@@ -7,7 +7,7 @@
 
 #include <glm/glm.hpp>
 
-struct UniformBufferObject {
+struct ObjectPushConstants {
     glm::mat4 modelMatrix;
 };
 

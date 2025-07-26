@@ -10,6 +10,6 @@
 typedef struct
 {
     glm::mat4 viewProjection;
-} CameraConstants;
+} CameraUniformData;
 
 #endif //CAMERACONSTANTS_H

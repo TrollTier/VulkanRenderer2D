@@ -7,7 +7,7 @@
 #include <memory>
 #include <vulkan/vulkan.h>
 
-#include "UniformBufferObject.h"
+#include "ObjectPushConstants.h"
 #include "VulkanRessources.h"
 
 class Pipeline
@@ -22,7 +22,7 @@ public:
         VkFormat swapchainImageFormat);
 
     void updateAfterImageLoaded(VkDescriptorImageInfo& imageInfo);
-    void updateUniformBuffer(size_t index, const UniformBufferObject& bufferObject);
+    void updateUniformBuffer(size_t index, const ObjectPushConstants& bufferObject);
 
     [[nodiscard]] VkPipelineLayout getLayout() const
     {

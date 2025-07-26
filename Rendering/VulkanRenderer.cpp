@@ -11,12 +11,12 @@
 
 #include <iostream>
 
-#include "CameraConstants.h"
+#include "CameraUniformData.h"
 #include "VulkanRessources.h"
 #include "VulkanWindow.h"
 #include "../include/glfw-3.4/include/GLFW/glfw3native.h"
 
-#include "UniformBufferObject.h"
+#include "ObjectPushConstants.h"
 
 VulkanRenderer::~VulkanRenderer()
 {
@@ -25,16 +25,6 @@ VulkanRenderer::~VulkanRenderer()
     const auto& descriptorPool =  m_pipeline->getDescriptorPool();
 
     vkDeviceWaitIdle(device);
-
-    for (const auto& instanceData : m_instances)
-    {
-        for (size_t i = 0; i < instanceData.descriptorSets.size(); i++)
-        {
-            vkUnmapMemory(device, instanceData.uniformBufferMemories[i]);
-            vkFreeMemory(device, instanceData.uniformBufferMemories[i], allocator);
-            vkDestroyBuffer(device, instanceData.uniformBuffers[i], allocator);
-        }
-    }
 
     for (size_t i = 0; i < m_indexBuffers.size(); i++)
     {
@@ -72,6 +62,19 @@ void VulkanRenderer::initialize(
         m_swapchain->m_format.format);
 
     initializeSampler();
+
+    const auto imageCount = m_swapchain->getImageCount();
+    m_cameraBuffers.reserve(imageCount);
+
+    for (int i = 0; i < imageCount; i++)
+    {
+        m_cameraBuffers.emplace_back(
+            std::make_unique<Buffer>(
+                m_vulkanRessources,
+                sizeof(CameraUniformData),
+                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+    }
 }
 
 size_t VulkanRenderer::loadTexture(const char *texturePath)
@@ -120,11 +123,7 @@ void VulkanRenderer::onGameObjectCreated(const GameObject& gameObject)
     }
 
     const size_t imageCount =  m_swapchain->getImageCount();
-
     std::vector<VkDescriptorSet> descriptorSets{ imageCount };
-    std::vector<VkBuffer> uniformBuffers{ imageCount };
-    std::vector<VkDeviceMemory> uniformBufferMemories{ imageCount };
-    std::vector<void*> uniformBuffersMapped{ imageCount };
 
     std::vector<VkDescriptorSetLayout> layouts(2, m_pipeline->getDescriptorSetLayout());
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -141,7 +140,7 @@ void VulkanRenderer::onGameObjectCreated(const GameObject& gameObject)
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
 
-    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+    VkDeviceSize bufferSize = sizeof(CameraUniformData);
 
     VkDescriptorImageInfo imageInfo{};
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -150,29 +149,12 @@ void VulkanRenderer::onGameObjectCreated(const GameObject& gameObject)
 
     for (size_t i = 0; i < imageCount; i++)
     {
-        VulkanHelpers::createBuffer(
-            m_vulkanRessources->m_logicalDevice,
-            m_vulkanRessources->m_physicalDevice,
-            bufferSize,
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            uniformBuffers[i],
-            uniformBufferMemories[i]);
-
-        vkMapMemory(
-            m_vulkanRessources->m_logicalDevice,
-            uniformBufferMemories[i],
-            0,
-            bufferSize,
-            0,
-            &uniformBuffersMapped[i]);
-
         const auto set = descriptorSets[i];
 
         VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = uniformBuffers[i];
+        bufferInfo.buffer = m_cameraBuffers[i]->getBuffer();
         bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(UniformBufferObject);
+        bufferInfo.range = sizeof(CameraUniformData);
 
         std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -201,10 +183,7 @@ void VulkanRenderer::onGameObjectCreated(const GameObject& gameObject)
 
     const InstanceData instance
     {
-        std::move(descriptorSets),
-        std::move(uniformBuffers),
-        std::move(uniformBufferMemories),
-        std::move(uniformBuffersMapped)
+        std::move(descriptorSets)
     };
 
     m_instances[index] = instance;
@@ -316,7 +295,7 @@ void VulkanRenderer::createBufferWithData(
     vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
 
-void VulkanRenderer::updateCamera(VkCommandBuffer commandBuffer)
+void VulkanRenderer::updateCamera(size_t imageIndex)
 {
     glm::vec3 eye    = glm::vec3(0.0f, 0.0f, 1.0f);
     glm::vec3 center = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -329,34 +308,35 @@ void VulkanRenderer::updateCamera(VkCommandBuffer commandBuffer)
         0.0f,
         (float)m_swapchain->m_height);
 
-    const auto constants = CameraConstants
+    const auto constants = CameraUniformData
     {
         projection * view
     };
 
-    vkCmdPushConstants(
-        commandBuffer,
-        m_pipeline->getLayout(),
-        VK_SHADER_STAGE_VERTEX_BIT,
-        0,
-        sizeof(CameraConstants),
-        &constants);
+    memcpy(
+        (void*)m_cameraBuffers[imageIndex]->getBufferMappedMemory(),
+        &constants,
+        sizeof(CameraUniformData));
 }
 
-void VulkanRenderer::updateUniformBuffer(size_t imageIndex,
-                                         const GameObject& gameObject,
-                                         const InstanceData& instance) {
-    UniformBufferObject ubo{};
+void VulkanRenderer::updateUniformBuffer(
+    VkCommandBuffer commandBuffer,
+    const GameObject& gameObject,
+    const InstanceData& instance) {
+
+    ObjectPushConstants ubo{};
     glm::mat4 model =
         glm::translate(glm::mat4(1.0f), gameObject.getWorldPosition()) *
         glm::scale(glm::mat4(1), glm::vec3(64.0f, 64.0f, 1.0f));
 
     ubo.modelMatrix = model;
 
-    memcpy(
-        instance.uniformBuffersMapped[imageIndex],
-        &ubo,
-        sizeof(UniformBufferObject));
+    vkCmdPushConstants(
+        commandBuffer,
+        m_pipeline->getLayout(),
+        VK_SHADER_STAGE_VERTEX_BIT,
+        0,
+        sizeof(ObjectPushConstants), &ubo);
 }
 
 void VulkanRenderer::draw_scene(const Map& map, const World& world)
@@ -463,7 +443,7 @@ void VulkanRenderer::draw_scene(const Map& map, const World& world)
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         m_pipeline->getPipeline());
 
-    updateCamera(currentImageElement->commandBuffer);
+    updateCamera(imageIndex);
 
     const auto& gameObjects = world.getGameObjects();
 
@@ -494,7 +474,7 @@ void VulkanRenderer::draw_scene(const Map& map, const World& world)
                 nullptr
             );
 
-            updateUniformBuffer(imageIndex, gameObject, instanceData);
+            updateUniformBuffer(currentImageElement->commandBuffer, gameObject, instanceData);
 
             const size_t meshIndex = meshPtr->getMeshIndex();
             VkBuffer vertexBuffers[] = { m_vertexBuffers[meshIndex] };

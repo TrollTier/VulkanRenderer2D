@@ -7,7 +7,7 @@
 #include <array>
 #include <fstream>
 
-#include "CameraConstants.h"
+#include "CameraUniformData.h"
 #include "VulkanHelpers.h"
 #include "../Core/Vertex.h"
 
@@ -158,7 +158,7 @@ Pipeline::Pipeline(
 
     VkPushConstantRange cameraConstantsRange{};
     cameraConstantsRange.offset = 0;
-    cameraConstantsRange.size = sizeof(CameraConstants);
+    cameraConstantsRange.size = sizeof(ObjectPushConstants);
     cameraConstantsRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
@@ -215,11 +215,11 @@ Pipeline::Pipeline(
 
 void Pipeline::initializeDescriptorSetLayout()
 {
-    VkDescriptorSetLayoutBinding uboLayoutBinding{};
-    uboLayoutBinding.binding = 0;
-    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    VkDescriptorSetLayoutBinding cameraBinding{};
+    cameraBinding.binding = 0;
+    cameraBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    cameraBinding.descriptorCount = 1;
+    cameraBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
     VkDescriptorSetLayoutBinding samplerBinding{};
     samplerBinding.binding = 1;
@@ -228,7 +228,7 @@ void Pipeline::initializeDescriptorSetLayout()
     samplerBinding.pImmutableSamplers = nullptr;
     samplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerBinding };
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = { cameraBinding, samplerBinding };
 
     VkDescriptorSetLayoutCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;

@@ -7,6 +7,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "Buffer.h"
 #include "InstanceData.h"
 #include "Pipeline.h"
 #include "Swapchain.h"
@@ -46,6 +47,7 @@ private:
     std::vector<VkDeviceMemory> m_indexBufferMemories {1, VK_NULL_HANDLE};
 
     std::vector<InstanceData> m_instances {1};
+    std::vector<std::unique_ptr<Buffer>> m_cameraBuffers{};
 
     VkSampler m_sampler = VK_NULL_HANDLE;
 
@@ -59,8 +61,8 @@ private:
         VkDeviceMemory& dstBufferMemory
     );
 
-    void updateCamera(VkCommandBuffer commandBuffer);
-    void updateUniformBuffer(size_t imageIndex, const GameObject& gameObject, const InstanceData& instance);
+    void updateCamera(size_t imageIndex);
+    void updateUniformBuffer(VkCommandBuffer commandBuffer, const GameObject& gameObject, const InstanceData& instance);
     void imageToAttachmentLayout(SwapchainElement* element);
     void imageToPresentLayout(SwapchainElement* element);
 };
