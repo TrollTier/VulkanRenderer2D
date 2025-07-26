@@ -13,7 +13,6 @@
 
 #include "../Rendering/VulkanRenderer.h"
 
-#include "../Core/MeshLoader.h"
 #include "../Core/World.h"
 
 Game::Game()
@@ -28,10 +27,6 @@ Game::Game()
     m_vulkanWindow = std::make_shared<VulkanWindow>(m_window);
     m_renderer = std::make_unique<VulkanRenderer>();
     m_renderer->initialize(true, m_vulkanWindow);
-
-    m_meshLoader = std::make_unique<MeshLoader>();
-    const auto& quadMesh = m_meshLoader->getQuadMeshShared();
-    m_renderer->onMeshCreated(quadMesh);
 
     m_textureIndices.push_back(m_renderer->loadTexture("../Assets/texture.jpg"));
     m_textureIndices.push_back(m_renderer->loadTexture("../Assets/Flame.png"));
@@ -55,7 +50,7 @@ Game::Game()
 
         const auto object = m_world->addGameObject(
             glm::vec3(randomValueX, randomValueY, 0),
-            quadMesh,
+            0,
             Sprite{randomTextureIndex});
 
         m_renderer->onGameObjectCreated(object);
@@ -120,7 +115,7 @@ void Game::mouseButtonCallback(int button, int action, int mods)
 
     const auto object = m_world->addGameObject(
         glm::vec3(static_cast<float>(tileColumn * tileSize), static_cast<float>(tileRow * tileSize), 0),
-        this->m_meshLoader->getQuadMesh(),
+        0,
         Sprite(textureIndex));
 
     m_renderer->onGameObjectCreated(object);

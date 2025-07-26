@@ -24,7 +24,6 @@ public:
     ~VulkanRenderer();
 
     void initialize(bool enableValidationLayers, std::shared_ptr<VulkanWindow> window);
-    void onMeshCreated(const std::shared_ptr<Mesh>& mesh);
     size_t loadTexture(const char* texturePath);
     void onGameObjectCreated(const GameObject& gameObject);
 
@@ -38,6 +37,8 @@ private:
     std::shared_ptr<VulkanRessources> m_vulkanRessources;
     std::unique_ptr<Swapchain> m_swapchain;
     std::unique_ptr<Pipeline> m_pipeline;
+
+    std::vector<std::unique_ptr<Mesh>> m_meshes;
     std::vector<std::unique_ptr<Texture2D>> m_textures;
 
     std::vector<VkBuffer> m_vertexBuffers {1, VK_NULL_HANDLE};
@@ -52,6 +53,8 @@ private:
     VkSampler m_sampler = VK_NULL_HANDLE;
 
     void initializeSampler();
+    void initializeDefaultMeshes();
+    void onMeshCreated(const Mesh& mesh);
 
     void createBufferWithData(
         const void* srcData,

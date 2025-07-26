@@ -62,6 +62,7 @@ void VulkanRenderer::initialize(
         m_swapchain->m_format.format);
 
     initializeSampler();
+    initializeDefaultMeshes();
 
     const auto imageCount = m_swapchain->getImageCount();
     m_cameraBuffers.reserve(imageCount);
@@ -77,18 +78,35 @@ void VulkanRenderer::initialize(
     }
 }
 
+void VulkanRenderer::initializeDefaultMeshes()
+{
+    const std::vector<Vertex> vertices = {
+        {{0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+        {{1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+        {{1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+        {{0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+    };
+
+    const std::vector<uint16_t> indices = {
+        0, 1, 2, 2, 3, 0
+    };
+
+    m_meshes.emplace_back(std::make_unique<Mesh>(0, vertices, indices));
+    onMeshCreated(*m_meshes[m_meshes.size() - 1]);
+}
+
+
 size_t VulkanRenderer::loadTexture(const char *texturePath)
 {
     m_textures.emplace_back(std::make_unique<Texture2D>(m_vulkanRessources, texturePath));
     return m_textures.size() - 1;
 }
 
-
-void VulkanRenderer::onMeshCreated(const std::shared_ptr<Mesh>& mesh)
+void VulkanRenderer::onMeshCreated(const Mesh& mesh)
 {
-    const auto& vertices = mesh->getVertices();
-    const auto& indices = mesh->getIndices();
-    const size_t index = mesh->getMeshIndex();
+    const auto& vertices = mesh.getVertices();
+    const auto& indices = mesh.getIndices();
+    const size_t index = mesh.getMeshIndex();
 
     if (index >= m_indexBuffers.size())
     {
@@ -139,8 +157,6 @@ void VulkanRenderer::onGameObjectCreated(const GameObject& gameObject)
     {
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
-
-    VkDeviceSize bufferSize = sizeof(CameraUniformData);
 
     VkDescriptorImageInfo imageInfo{};
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -449,47 +465,39 @@ void VulkanRenderer::draw_scene(const Map& map, const World& world)
 
     for (const auto& gameObject : gameObjects)
     {
-        const auto mesh = gameObject.getMesh();
+        const Mesh& mesh = *m_meshes[gameObject.getMeshHandle()];
 
-        if (mesh.expired())
-        {
-            continue;
-        }
+        const size_t index = gameObject.getIndex();
+        const InstanceData& instanceData = m_instances[index];
 
-        if (std::shared_ptr<Mesh> meshPtr = mesh.lock())
-        {
-            const size_t index = gameObject.getIndex();
-            const InstanceData& instanceData = m_instances[index];
+        const auto descriptorSet = instanceData.descriptorSets[m_swapchain->getCurrentFrameIndex()];
+        // Bind global descriptor set
+        vkCmdBindDescriptorSets(
+            currentImageElement->commandBuffer,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            m_pipeline->getLayout(),
+            0,
+            1,
+            &descriptorSet,
+            0,
+            nullptr
+        );
 
-            const auto descriptorSet = instanceData.descriptorSets[m_swapchain->getCurrentFrameIndex()];
-            // Bind global descriptor set
-            vkCmdBindDescriptorSets(
-                currentImageElement->commandBuffer,
-                VK_PIPELINE_BIND_POINT_GRAPHICS,
-                m_pipeline->getLayout(),
-                0,
-                1,
-                &descriptorSet,
-                0,
-                nullptr
-            );
+        updateUniformBuffer(currentImageElement->commandBuffer, gameObject, instanceData);
 
-            updateUniformBuffer(currentImageElement->commandBuffer, gameObject, instanceData);
+        const size_t meshIndex = mesh.getMeshIndex();
+        VkBuffer vertexBuffers[] = { m_vertexBuffers[meshIndex] };
+        VkDeviceSize offsets[] = { 0 };
+        vkCmdBindVertexBuffers(currentImageElement->commandBuffer, 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(currentImageElement->commandBuffer, m_indexBuffers[meshIndex], 0, VK_INDEX_TYPE_UINT16);
 
-            const size_t meshIndex = meshPtr->getMeshIndex();
-            VkBuffer vertexBuffers[] = { m_vertexBuffers[meshIndex] };
-            VkDeviceSize offsets[] = { 0 };
-            vkCmdBindVertexBuffers(currentImageElement->commandBuffer, 0, 1, vertexBuffers, offsets);
-            vkCmdBindIndexBuffer(currentImageElement->commandBuffer, m_indexBuffers[meshIndex], 0, VK_INDEX_TYPE_UINT16);
-
-            vkCmdDrawIndexed(
-                currentImageElement->commandBuffer,
-                static_cast<uint32_t>(meshPtr->getIndices().size()),
-                1,
-                0,
-                0,
-                0);
-        }
+        vkCmdDrawIndexed(
+            currentImageElement->commandBuffer,
+            static_cast<uint32_t>(mesh.getIndices().size()),
+            1,
+            0,
+            0,
+            0);
     }
 
     vkCmdEndRendering(currentImageElement->commandBuffer);

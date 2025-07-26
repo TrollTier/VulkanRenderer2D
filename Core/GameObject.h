@@ -14,10 +14,10 @@
 class GameObject
 {
 public:
-    GameObject(size_t index, glm::vec3 worldPosition, std::weak_ptr<Mesh> mesh, Sprite sprite);
+    GameObject(size_t index, glm::vec3 worldPosition, size_t meshHandle, Sprite sprite);
 
     [[nodiscard]] const glm::vec3& getWorldPosition() const;
-    [[nodiscard]] std::weak_ptr<Mesh> getMesh() const;
+    [[nodiscard]] size_t getMeshHandle() const;
     [[nodiscard]] size_t getIndex() const;
     [[nodiscard]] const Sprite& getSprite() const;
 
@@ -27,9 +27,9 @@ public:
     }
 
 private:
-    size_t m_index;
+    size_t m_index{};
     glm::vec3 m_worldPosition{};
-    std::weak_ptr<Mesh> m_mesh;
+    size_t m_meshHandle{};
     Sprite m_sprite;
 };
 

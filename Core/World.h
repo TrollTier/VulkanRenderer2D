@@ -11,7 +11,7 @@ class World
 public:
     ~World();
 
-    const GameObject& addGameObject(glm::vec3 worldPosition, std::weak_ptr<Mesh> mesh, Sprite sprite);
+    const GameObject& addGameObject(glm::vec3 worldPosition, size_t meshHandle, Sprite sprite);
     const std::vector<GameObject>& getGameObjects() const;
 
 private:

@@ -9,10 +9,10 @@ World::~World()
     m_gameObjects.clear();
 }
 
-const GameObject& World::addGameObject(glm::vec3 worldPosition, std::weak_ptr<Mesh> mesh, Sprite sprite)
+const GameObject& World::addGameObject(glm::vec3 worldPosition, size_t meshHandle, Sprite sprite)
 {
     const size_t index = m_gameObjects.size();
-    m_gameObjects.emplace_back(index, worldPosition, mesh, sprite);
+    m_gameObjects.emplace_back(index, worldPosition, meshHandle, sprite);
 
     return m_gameObjects[index];
 }

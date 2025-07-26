@@ -14,8 +14,6 @@ add_executable(FireEmblemClone main.cpp
         Core/GameObject.cpp
         Core/GameObject.h
         Core/Sprite.h
-        Core/MeshLoader.cpp
-        Core/MeshLoader.h
         Core/World.cpp
         Core/World.h
         Core/Game.cpp
