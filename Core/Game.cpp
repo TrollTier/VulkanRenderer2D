@@ -82,13 +82,8 @@ void Game::mouseButtonCallback(int button, int action, int mods)
     const auto tileRow = static_cast<uint16_t>(std::floor(ypos / tileSize));
     const auto tileColumn = static_cast<uint16_t>(std::floor(xpos / tileSize));
 
-    std::random_device random;
-    std::mt19937 generator(random());
-    std::uniform_int_distribution<size_t> distributionTextureIndex(0, m_textureIndices.size() - 1);
-    const size_t textureIndex = distributionTextureIndex(generator);
-
     auto& tile = m_map->getTileAt(tileColumn, tileRow);
-    tile.sprite.textureIndex =  textureIndex;
+    tile.sprite.textureIndex =  (tile.sprite.textureIndex + 1) % m_textureIndices.size();
 }
 
 
