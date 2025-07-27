@@ -35,25 +35,6 @@ Game::Game()
     m_world = std::make_unique<World>();
     m_map = std::make_unique<Map>(50, 50, 64);
 
-    std::random_device random;
-    std::mt19937 generator(random());
-
-    std::uniform_real_distribution<float> distributionX(0, 1280);
-    std::uniform_real_distribution<float> distributionY(0, 768);
-    std::uniform_int_distribution<size_t> distributionTextureIndex(0, m_textureIndices.size() - 1);
-
-    for (size_t i = 0; i < 100; i++)
-    {
-        const auto randomValueX = distributionX(generator);
-        const auto randomValueY = distributionY(generator);
-        const auto randomTextureIndex = distributionTextureIndex(generator);
-
-        m_world->addGameObject(
-            glm::vec3(randomValueX, randomValueY, 0),
-            0,
-            Sprite{randomTextureIndex});
-    }
-
     glfwSetMouseButtonCallback(m_window, Game::glfwMouseButtonHandler);
 }
 
@@ -67,9 +48,7 @@ void Game::RunLoop()
 
         const auto startOfUpdate = std::chrono::high_resolution_clock::now();
 
-        // TODO: poll mouse events to draw tiles on the map
-
-        // TODO: UI for tile selection. IMGUI?
+        // TODO world update
 
         const auto endOfUpdate = std::chrono::high_resolution_clock::now();
         const auto startOfRender = std::chrono::high_resolution_clock::now();
@@ -83,9 +62,9 @@ void Game::RunLoop()
         const auto updateDuration = endOfUpdate - startOfUpdate;
         const auto renderDuration = endOfRender - startOfRender;
 
-        // std::cout << "Frame:" << std::chrono::duration_cast<std::chrono::milliseconds>(frameDuration).count() << std::endl;
-        // std::cout << "Update:" << std::chrono::duration_cast<std::chrono::milliseconds>(updateDuration).count() << std::endl;
-        // std::cout << "Render:" << std::chrono::duration_cast<std::chrono::milliseconds>(renderDuration).count() << std::endl;
+        std::cout << "Frame:" << std::chrono::duration_cast<std::chrono::milliseconds>(frameDuration).count() << std::endl;
+        std::cout << "Update:" << std::chrono::duration_cast<std::chrono::milliseconds>(updateDuration).count() << std::endl;
+        std::cout << "Render:" << std::chrono::duration_cast<std::chrono::milliseconds>(renderDuration).count() << std::endl;
     }
 }
 
@@ -110,11 +89,6 @@ void Game::mouseButtonCallback(int button, int action, int mods)
 
     auto& tile = m_map->getTileAt(tileColumn, tileRow);
     tile.sprite.textureIndex =  textureIndex;
-
-    m_world->addGameObject(
-        glm::vec3(static_cast<float>(tileColumn * tileSize), static_cast<float>(tileRow * tileSize), 0),
-        0,
-        Sprite(textureIndex));
 }
 
 

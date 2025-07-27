@@ -342,16 +342,16 @@ void VulkanRenderer::updateCamera(size_t imageIndex)
 
 void VulkanRenderer::updateUniformBuffer(
     VkCommandBuffer commandBuffer,
-    const GameObject& gameObject,
-    const InstanceData& instance) {
+    const glm::vec3& worldPosition,
+    const size_t textureIndex) {
 
     glm::mat4 model =
-        glm::translate(glm::mat4(1.0f), gameObject.getWorldPosition()) *
+        glm::translate(glm::mat4(1.0f), worldPosition) *
         glm::scale(glm::mat4(1), glm::vec3(64.0f, 64.0f, 1.0f));
 
     ObjectPushConstants ubo{};
     ubo.modelMatrix = model;
-    ubo.textureIndex = gameObject.getSprite().textureIndex;
+    ubo.textureIndex = textureIndex;
 
     vkCmdPushConstants(
         commandBuffer,
@@ -488,16 +488,35 @@ void VulkanRenderer::draw_scene(const Map& map, const World& world)
     vkCmdBindVertexBuffers(currentImageElement->commandBuffer, 0, 1, vertexBuffers, offsets);
     vkCmdBindIndexBuffer(currentImageElement->commandBuffer, m_indexBuffers[meshIndex], 0, VK_INDEX_TYPE_UINT16);
 
-    const auto& gameObjects = world.getGameObjects();
-
     const auto indices = mesh.getIndices().size();
 
-    for (const auto& gameObject : gameObjects)
+    const auto tileSize = map.getTileSize();
+
+    for (const auto& tile : map.getTiles())
+    {
+        updateUniformBuffer(
+            currentImageElement->commandBuffer,
+            glm::vec3(tile.column * tileSize, tile.row * tileSize, 0),
+            tile.sprite.textureIndex);
+
+        vkCmdDrawIndexed(
+            currentImageElement->commandBuffer,
+            static_cast<uint32_t>(indices),
+            1,
+            0,
+            0,
+            0);
+    }
+
+    for (const auto& gameObject : world.getGameObjects())
     {
         const size_t index = gameObject.getIndex();
         const InstanceData& instanceData = m_instances[index];
 
-        updateUniformBuffer(currentImageElement->commandBuffer, gameObject, instanceData);
+        updateUniformBuffer(
+            currentImageElement->commandBuffer,
+            gameObject.getWorldPosition(),
+            gameObject.getSprite().textureIndex);
 
         vkCmdDrawIndexed(
             currentImageElement->commandBuffer,

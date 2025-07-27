@@ -8,6 +8,8 @@
 
 typedef struct
 {
+    size_t row;
+    size_t column;
     Sprite sprite;
 } Tile;
 

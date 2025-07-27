@@ -14,6 +14,16 @@ Map::Map(uint16_t rows, uint16_t columns, uint16_t tileSize)
 
     m_tiles = std::make_unique<std::vector<Tile>>();
     m_tiles->resize(rows * columns, Tile{});
+
+    for (size_t row = 0; row < rows; ++row)
+    {
+        for (size_t column = 0; column < columns; ++column)
+        {
+            auto& tile = m_tiles->at(column + (row * columns));
+            tile.column = column;
+            tile.row = row;
+        }
+    }
 }
 
 Map::~Map()

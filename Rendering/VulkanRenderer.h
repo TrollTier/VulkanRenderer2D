@@ -66,7 +66,10 @@ private:
     );
 
     void updateCamera(size_t imageIndex);
-    void updateUniformBuffer(VkCommandBuffer commandBuffer, const GameObject& gameObject, const InstanceData& instance);
+    void updateUniformBuffer(
+        VkCommandBuffer commandBuffer,
+        const glm::vec3& worldPosition,
+        const size_t textureIndex);
 
     static void imageToAttachmentLayout(SwapchainElement* element);
 
