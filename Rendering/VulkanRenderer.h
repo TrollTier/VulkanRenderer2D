@@ -25,7 +25,6 @@ public:
 
     void initialize(bool enableValidationLayers, std::shared_ptr<VulkanWindow> window);
     size_t loadTexture(const char* texturePath);
-    void onGameObjectCreated(const GameObject& gameObject);
 
     void draw_scene(const Map& map, const World& world);
 

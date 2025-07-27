@@ -48,12 +48,10 @@ Game::Game()
         const auto randomValueY = distributionY(generator);
         const auto randomTextureIndex = distributionTextureIndex(generator);
 
-        const auto object = m_world->addGameObject(
+        m_world->addGameObject(
             glm::vec3(randomValueX, randomValueY, 0),
             0,
             Sprite{randomTextureIndex});
-
-        m_renderer->onGameObjectCreated(object);
     }
 
     glfwSetMouseButtonCallback(m_window, Game::glfwMouseButtonHandler);
@@ -113,12 +111,10 @@ void Game::mouseButtonCallback(int button, int action, int mods)
     auto& tile = m_map->getTileAt(tileColumn, tileRow);
     tile.sprite.textureIndex =  textureIndex;
 
-    const auto object = m_world->addGameObject(
+    m_world->addGameObject(
         glm::vec3(static_cast<float>(tileColumn * tileSize), static_cast<float>(tileRow * tileSize), 0),
         0,
         Sprite(textureIndex));
-
-    m_renderer->onGameObjectCreated(object);
 }
 
 
