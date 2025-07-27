@@ -85,9 +85,9 @@ void Game::RunLoop()
         const auto updateDuration = endOfUpdate - startOfUpdate;
         const auto renderDuration = endOfRender - startOfRender;
 
-        std::cout << "Frame:" << std::chrono::duration_cast<std::chrono::milliseconds>(frameDuration).count() << std::endl;
-        std::cout << "Update:" << std::chrono::duration_cast<std::chrono::milliseconds>(updateDuration).count() << std::endl;
-        std::cout << "Render:" << std::chrono::duration_cast<std::chrono::milliseconds>(renderDuration).count() << std::endl;
+        // std::cout << "Frame:" << std::chrono::duration_cast<std::chrono::milliseconds>(frameDuration).count() << std::endl;
+        // std::cout << "Update:" << std::chrono::duration_cast<std::chrono::milliseconds>(updateDuration).count() << std::endl;
+        // std::cout << "Render:" << std::chrono::duration_cast<std::chrono::milliseconds>(renderDuration).count() << std::endl;
     }
 }
 

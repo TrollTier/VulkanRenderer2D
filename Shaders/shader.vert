@@ -2,6 +2,7 @@
 
 layout(push_constant) uniform ModelData {
     mat4 modelMatrix;
+    uint textureIndex;
 } ubo;
 
 layout(binding = 0) uniform CameraUniformData {
@@ -14,7 +15,6 @@ layout(location = 2) in vec2 inTexCoord;
 
 layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec2 fragTexCoord;
-
 
 void main() {
     vec4 position = camera.viewProjection * ubo.modelMatrix * vec4(inPosition, 1.0);

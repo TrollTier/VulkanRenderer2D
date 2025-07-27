@@ -9,6 +9,7 @@
 
 struct ObjectPushConstants {
     glm::mat4 modelMatrix;
+    uint32_t textureIndex;
 };
 
 #endif //UNIFORMBUFFEROBJECT_H

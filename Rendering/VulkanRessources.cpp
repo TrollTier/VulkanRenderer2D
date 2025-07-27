@@ -192,11 +192,18 @@ void VulkanRessources::initializeLogicalDevice()
         .dynamicRendering = VK_TRUE,
     };
 
+    VkPhysicalDeviceDescriptorIndexingFeaturesEXT physicalDeviceDescriptorIndexingFeatures{};
+    physicalDeviceDescriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
+    physicalDeviceDescriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+    physicalDeviceDescriptorIndexingFeatures.runtimeDescriptorArray = VK_TRUE;
+    physicalDeviceDescriptorIndexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
+    physicalDeviceDescriptorIndexingFeatures.pNext = &dynamicRendering;
+
     VkDeviceCreateInfo deviceCreateInfo = {};
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     deviceCreateInfo.queueCreateInfoCount = 1;
     deviceCreateInfo.pQueueCreateInfos = &queueCreateInfo;
-    deviceCreateInfo.pNext = &dynamicRendering;
+    deviceCreateInfo.pNext = &physicalDeviceDescriptorIndexingFeatures;
     deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(DEVICE_EXTENSIONS.size());
     deviceCreateInfo.ppEnabledExtensionNames = DEVICE_EXTENSIONS.data();
     deviceCreateInfo.pEnabledFeatures = &deviceFeatures;

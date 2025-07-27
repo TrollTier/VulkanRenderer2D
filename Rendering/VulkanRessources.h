@@ -41,7 +41,8 @@ private:
     std::shared_ptr<VulkanWindow> m_window;
 
     const std::vector<const char*> DEVICE_EXTENSIONS = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME
     };
 
     void initializeInstance(

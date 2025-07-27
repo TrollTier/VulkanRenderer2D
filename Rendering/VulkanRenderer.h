@@ -34,6 +34,8 @@ private:
         "VK_LAYER_KHRONOS_validation"
     };
 
+    std::vector<VkDescriptorSet> m_defaultDescriptorSets;
+
     std::shared_ptr<VulkanRessources> m_vulkanRessources;
     std::unique_ptr<Swapchain> m_swapchain;
     std::unique_ptr<Pipeline> m_pipeline;
@@ -66,8 +68,10 @@ private:
 
     void updateCamera(size_t imageIndex);
     void updateUniformBuffer(VkCommandBuffer commandBuffer, const GameObject& gameObject, const InstanceData& instance);
-    void imageToAttachmentLayout(SwapchainElement* element);
-    void imageToPresentLayout(SwapchainElement* element);
+
+    static void imageToAttachmentLayout(SwapchainElement* element);
+
+    static void imageToPresentLayout(SwapchainElement* element);
 };
 
 #endif //VULKANRENDERER_H

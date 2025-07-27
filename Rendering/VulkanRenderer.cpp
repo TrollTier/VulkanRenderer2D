@@ -66,6 +66,7 @@ void VulkanRenderer::initialize(
 
     const auto imageCount = m_swapchain->getImageCount();
     m_cameraBuffers.reserve(imageCount);
+    m_defaultDescriptorSets.resize(imageCount);
 
     for (int i = 0; i < imageCount; i++)
     {
@@ -98,6 +99,85 @@ void VulkanRenderer::initializeDefaultMeshes()
 size_t VulkanRenderer::loadTexture(const char *texturePath)
 {
     m_textures.emplace_back(std::make_unique<Texture2D>(m_vulkanRessources, texturePath));
+
+    const size_t imageCount =  m_swapchain->getImageCount();
+
+    for (size_t i = 0; i < imageCount; i++)
+    {
+        if (m_defaultDescriptorSets[i] != VK_NULL_HANDLE)
+        {
+            vkFreeDescriptorSets(
+                m_vulkanRessources->m_logicalDevice,
+                m_pipeline->getDescriptorPool(),
+                1,
+                &m_defaultDescriptorSets[i]);
+        }
+    }
+
+    m_defaultDescriptorSets.clear();
+    m_defaultDescriptorSets.resize(imageCount);
+    std::vector<VkDescriptorSetLayout> layouts(imageCount, m_pipeline->getDescriptorSetLayout());
+
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = m_pipeline->getDescriptorPool();
+    allocInfo.descriptorSetCount = imageCount;
+    allocInfo.pSetLayouts = layouts.data();
+
+    if (vkAllocateDescriptorSets(
+            m_vulkanRessources->m_logicalDevice,
+            &allocInfo,
+            m_defaultDescriptorSets.data()) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to allocate descriptor sets!");
+    }
+
+    std::vector<VkDescriptorImageInfo> imageInfos{m_textures.size()};
+
+    for (size_t i = 0; i < m_textures.size(); i++)
+    {
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = m_textures[i]->getImageView();
+        imageInfo.sampler = m_sampler;
+
+        imageInfos[i] = imageInfo;
+    }
+
+    for (size_t i = 0; i < imageCount; i++)
+    {
+        const auto set = m_defaultDescriptorSets[i];
+
+        VkDescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = m_cameraBuffers[i]->getBuffer();
+        bufferInfo.offset = 0;
+        bufferInfo.range = sizeof(CameraUniformData);
+
+        std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[0].dstSet = set;
+        descriptorWrites[0].dstBinding = 0;
+        descriptorWrites[0].dstArrayElement = 0;
+        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[0].descriptorCount = 1;
+        descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[1].dstSet = set;
+        descriptorWrites[1].dstBinding = 1;
+        descriptorWrites[1].dstArrayElement = 0;
+        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[1].descriptorCount = imageInfos.size();
+        descriptorWrites[1].pImageInfo = imageInfos.data();
+
+        vkUpdateDescriptorSets(
+            m_vulkanRessources->m_logicalDevice,
+            static_cast<uint32_t>(descriptorWrites.size()),
+            descriptorWrites.data(),
+            0,
+            nullptr);
+    }
+
     return m_textures.size() - 1;
 }
 
@@ -339,17 +419,18 @@ void VulkanRenderer::updateUniformBuffer(
     const GameObject& gameObject,
     const InstanceData& instance) {
 
-    ObjectPushConstants ubo{};
     glm::mat4 model =
         glm::translate(glm::mat4(1.0f), gameObject.getWorldPosition()) *
         glm::scale(glm::mat4(1), glm::vec3(64.0f, 64.0f, 1.0f));
 
+    ObjectPushConstants ubo{};
     ubo.modelMatrix = model;
+    ubo.textureIndex = gameObject.getSprite().textureIndex;
 
     vkCmdPushConstants(
         commandBuffer,
         m_pipeline->getLayout(),
-        VK_SHADER_STAGE_VERTEX_BIT,
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         0,
         sizeof(ObjectPushConstants), &ubo);
 }
@@ -460,39 +541,41 @@ void VulkanRenderer::draw_scene(const Map& map, const World& world)
 
     updateCamera(imageIndex);
 
+    const auto descriptorSet = m_defaultDescriptorSets[m_swapchain->getCurrentFrameIndex()];
+    // Bind global descriptor set
+    vkCmdBindDescriptorSets(
+        currentImageElement->commandBuffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        m_pipeline->getLayout(),
+        0,
+        1,
+        &descriptorSet,
+        0,
+        nullptr
+    );
+
+    const Mesh& mesh = *m_meshes[0];
+
+    const size_t meshIndex = mesh.getMeshIndex();
+    VkBuffer vertexBuffers[] = { m_vertexBuffers[meshIndex] };
+    VkDeviceSize offsets[] = { 0 };
+    vkCmdBindVertexBuffers(currentImageElement->commandBuffer, 0, 1, vertexBuffers, offsets);
+    vkCmdBindIndexBuffer(currentImageElement->commandBuffer, m_indexBuffers[meshIndex], 0, VK_INDEX_TYPE_UINT16);
+
     const auto& gameObjects = world.getGameObjects();
+
+    const auto indices = mesh.getIndices().size();
 
     for (const auto& gameObject : gameObjects)
     {
-        const Mesh& mesh = *m_meshes[gameObject.getMeshHandle()];
-
         const size_t index = gameObject.getIndex();
         const InstanceData& instanceData = m_instances[index];
 
-        const auto descriptorSet = instanceData.descriptorSets[m_swapchain->getCurrentFrameIndex()];
-        // Bind global descriptor set
-        vkCmdBindDescriptorSets(
-            currentImageElement->commandBuffer,
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            m_pipeline->getLayout(),
-            0,
-            1,
-            &descriptorSet,
-            0,
-            nullptr
-        );
-
         updateUniformBuffer(currentImageElement->commandBuffer, gameObject, instanceData);
-
-        const size_t meshIndex = mesh.getMeshIndex();
-        VkBuffer vertexBuffers[] = { m_vertexBuffers[meshIndex] };
-        VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(currentImageElement->commandBuffer, 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(currentImageElement->commandBuffer, m_indexBuffers[meshIndex], 0, VK_INDEX_TYPE_UINT16);
 
         vkCmdDrawIndexed(
             currentImageElement->commandBuffer,
-            static_cast<uint32_t>(mesh.getIndices().size()),
+            static_cast<uint32_t>(indices),
             1,
             0,
             0,

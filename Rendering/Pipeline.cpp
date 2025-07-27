@@ -156,16 +156,16 @@ Pipeline::Pipeline(
     dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicState.pDynamicStates = dynamicStates.data();
 
-    VkPushConstantRange cameraConstantsRange{};
-    cameraConstantsRange.offset = 0;
-    cameraConstantsRange.size = sizeof(ObjectPushConstants);
-    cameraConstantsRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    VkPushConstantRange objectInstanceConstants{};
+    objectInstanceConstants.offset = 0;
+    objectInstanceConstants.size = sizeof(ObjectPushConstants);
+    objectInstanceConstants.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
     pipelineLayoutInfo.setLayoutCount = layouts.size();
     pipelineLayoutInfo.pSetLayouts = layouts.data();
     pipelineLayoutInfo.pushConstantRangeCount = 1;
-    pipelineLayoutInfo.pPushConstantRanges = &cameraConstantsRange;
+    pipelineLayoutInfo.pPushConstantRanges = &objectInstanceConstants;
 
     if (vkCreatePipelineLayout(
             ressources->m_logicalDevice,
@@ -223,7 +223,7 @@ void Pipeline::initializeDescriptorSetLayout()
 
     VkDescriptorSetLayoutBinding samplerBinding{};
     samplerBinding.binding = 1;
-    samplerBinding.descriptorCount = 1;
+    samplerBinding.descriptorCount = 3;
     samplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     samplerBinding.pImmutableSamplers = nullptr;
     samplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -266,6 +266,7 @@ void Pipeline::initializeDescriptorPool(size_t swapchainImageCount)
     descriptorPoolInfo.maxSets = maxSets;
     descriptorPoolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     descriptorPoolInfo.pPoolSizes = poolSizes.data();
+    descriptorPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
     const VkResult result = vkCreateDescriptorPool(
         m_vulkanRessources->m_logicalDevice,
