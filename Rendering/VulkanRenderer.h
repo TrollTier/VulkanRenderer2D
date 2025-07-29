@@ -51,6 +51,9 @@ private:
     std::vector<InstanceData> m_instances {1};
     std::vector<std::unique_ptr<Buffer>> m_cameraBuffers{};
 
+    std::vector<std::unique_ptr<Buffer>> m_objectBuffers{};
+    std::vector<VkDescriptorSet> m_objectBufferDescriptors{};
+
     VkSampler m_sampler = VK_NULL_HANDLE;
 
     void initializeSampler();

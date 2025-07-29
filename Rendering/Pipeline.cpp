@@ -51,6 +51,7 @@ Pipeline::~Pipeline()
     vkDestroyPipeline(device, m_pipeline, allocator);
     vkDestroyPipelineLayout(device, m_pipelineLayout, allocator);
     vkDestroyDescriptorSetLayout(device, m_descriptorSetLayout, allocator);
+    vkDestroyDescriptorSetLayout(device, m_descriptorSetLayoutObjectsBuffer, allocator);
 }
 
 Pipeline::Pipeline(
@@ -62,15 +63,9 @@ Pipeline::Pipeline(
 {
     m_vulkanRessources = ressources;
 
-    initializeDescriptorSetLayout();
     initializeDescriptorPool(swapchainImageCount);
-
-    std::vector<VkDescriptorSetLayout> layouts(2, m_descriptorSetLayout);
-    VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = m_descriptorPool;
-    allocInfo.descriptorSetCount = 2;
-    allocInfo.pSetLayouts = layouts.data();
+    initializeDescriptorSetLayout();
+    initializeObjectsBufferLayout();
 
     auto vertShaderCode = readFile(vertexShaderPath);
     auto fragShaderCode = readFile(fragmentShaderPath);
@@ -156,16 +151,13 @@ Pipeline::Pipeline(
     dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicState.pDynamicStates = dynamicStates.data();
 
-    VkPushConstantRange objectInstanceConstants{};
-    objectInstanceConstants.offset = 0;
-    objectInstanceConstants.size = sizeof(ObjectPushConstants);
-    objectInstanceConstants.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    std::vector<VkDescriptorSetLayout> layouts(2);
+    layouts[0] = m_descriptorSetLayout;
+    layouts[1] = m_descriptorSetLayoutObjectsBuffer;
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
     pipelineLayoutInfo.setLayoutCount = layouts.size();
     pipelineLayoutInfo.pSetLayouts = layouts.data();
-    pipelineLayoutInfo.pushConstantRangeCount = 1;
-    pipelineLayoutInfo.pPushConstantRanges = &objectInstanceConstants;
 
     if (vkCreatePipelineLayout(
             ressources->m_logicalDevice,
@@ -247,23 +239,47 @@ void Pipeline::initializeDescriptorSetLayout()
     }
 }
 
+void Pipeline::initializeObjectsBufferLayout()
+{
+    VkDescriptorSetLayoutBinding objectsBufferBinding{};
+    objectsBufferBinding.binding = 0;
+    objectsBufferBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    objectsBufferBinding.descriptorCount = 1;
+    objectsBufferBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    VkDescriptorSetLayoutCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    createInfo.bindingCount = 1;
+    createInfo.pBindings = &objectsBufferBinding;
+
+    const VkResult result = vkCreateDescriptorSetLayout(
+        m_vulkanRessources->m_logicalDevice,
+        &createInfo,
+        m_vulkanRessources->m_allocator,
+        &m_descriptorSetLayoutObjectsBuffer);
+
+    if (result != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create descriptor set layout");
+    }
+}
+
 void Pipeline::initializeDescriptorPool(size_t swapchainImageCount)
 {
-    // TODO: maybe not hard code the max amount of gameobjects
-    const size_t maxSets = swapchainImageCount * 10000;
-
     VkPhysicalDeviceProperties properties{};
     vkGetPhysicalDeviceProperties(m_vulkanRessources->m_physicalDevice, &properties);
 
-    std::array<VkDescriptorPoolSize, 2> poolSizes{};
+    std::array<VkDescriptorPoolSize, 3> poolSizes{};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount = maxSets;
+    poolSizes[0].descriptorCount = swapchainImageCount;
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = maxSets;
+    poolSizes[1].descriptorCount = swapchainImageCount * 100;
+    poolSizes[2].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    poolSizes[2].descriptorCount = swapchainImageCount;
 
     VkDescriptorPoolCreateInfo descriptorPoolInfo{};
     descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    descriptorPoolInfo.maxSets = maxSets;
+    descriptorPoolInfo.maxSets = swapchainImageCount * 10000;
     descriptorPoolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     descriptorPoolInfo.pPoolSizes = poolSizes.data();
     descriptorPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;

@@ -22,6 +22,8 @@ public:
 
     [[nodiscard]] VkBuffer getBuffer() const { return m_buffer; }
     [[nodiscard]] VkDeviceMemory getBufferMemory() const { return m_bufferMemory; }
+
+    [[nodiscard]] void* getBufferMappedMemoryWritable() const { return m_bufferMemoryMapped; }
     [[nodiscard]] const void* getBufferMappedMemory() const { return m_bufferMemoryMapped; }
 
 private:

@@ -41,16 +41,23 @@ public:
         return m_pipeline;
     }
 
+    [[nodiscard]] VkDescriptorSetLayout getDescriptorSetLayoutObjectsBuffer() const
+    {
+        return m_descriptorSetLayoutObjectsBuffer;
+    }
+
 private:
     std::shared_ptr<VulkanRessources> m_vulkanRessources;
 
     VkDescriptorSetLayout m_descriptorSetLayout = VK_NULL_HANDLE;
+    VkDescriptorSetLayout m_descriptorSetLayoutObjectsBuffer = VK_NULL_HANDLE;
     VkDescriptorPool m_descriptorPool = VK_NULL_HANDLE;
 
     VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
     VkPipeline m_pipeline;
 
     void initializeDescriptorSetLayout();
+    void initializeObjectsBufferLayout();
     void initializeDescriptorPool(size_t swapchainImageCount);
 };
 

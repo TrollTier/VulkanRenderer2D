@@ -23,6 +23,7 @@ Game::Game()
     m_window = glfwCreateWindow(1280, 768, "Vulkan API Tutorial", nullptr, nullptr);
     glfwSetWindowUserPointer(m_window, this);
     glfwSetFramebufferSizeCallback(m_window, nullptr);
+    glfwMaximizeWindow(m_window);
 
     m_vulkanWindow = std::make_shared<VulkanWindow>(m_window);
     m_renderer = std::make_unique<VulkanRenderer>();
