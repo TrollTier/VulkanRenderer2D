@@ -1,5 +1,4 @@
 #include "VulkanRenderer.h"
-
 #include <stdexcept>
 #include "VulkanHelpers.h"
 #include <fstream>
@@ -14,7 +13,7 @@
 #include "CameraUniformData.h"
 #include "VulkanRessources.h"
 #include "VulkanWindow.h"
-#include "../include/glfw-3.4/include/GLFW/glfw3native.h"
+#include "GLFW/glfw3native.h"
 
 #include "ObjectPushConstants.h"
 

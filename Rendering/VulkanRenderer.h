@@ -2,7 +2,7 @@
 #define VULKANRENDERER_H
 
 #include "vulkan/vulkan.h"
-#include "../include/glfw-3.4/include/GLFW/glfw3.h"
+#include <GLFW/glfw3.h>
 #include <vector>
 
 #include <glm/gtc/matrix_transform.hpp>

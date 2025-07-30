@@ -7,7 +7,7 @@
 
 #include <vector>
 #include <vulkan/vulkan.h>
-#include "../include/glfw-3.4/include/GLFW/glfw3.h"
+#include <GLFW/glfw3.h>
 
 typedef struct
 {

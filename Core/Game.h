@@ -7,7 +7,7 @@
 
 #include "Map.h"
 #include "World.h"
-#include "../include/glfw-3.4/include/GLFW/glfw3.h"
+#include <GLFW/glfw3.h>
 #include "../Rendering/VulkanRenderer.h"
 
 class Game

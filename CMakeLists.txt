@@ -8,7 +8,6 @@ find_package(Vulkan REQUIRED)
 add_executable(FireEmblemClone main.cpp
         Core/Timestep.h
         Core/BaseTypes.h
-        include/stb/stb_image.cpp
         Core/Mesh.cpp
         Core/Mesh.h
         Core/GameObject.cpp
@@ -23,8 +22,11 @@ add_executable(FireEmblemClone main.cpp
         Core/Map.cpp
         Core/Map.h)
 
+set( GLFW_BUILD_DOCS OFF CACHE BOOL  "GLFW lib only" )
 add_subdirectory(include/glfw-3.4)
+
 add_subdirectory(include/stb)
 add_subdirectory(Rendering)
 
+target_include_directories(${PROJECT_NAME} PUBLIC include/glfw-3.4/include)
 target_link_libraries(${PROJECT_NAME} PRIVATE -static Vulkan::Vulkan Rendering glfw stb)
