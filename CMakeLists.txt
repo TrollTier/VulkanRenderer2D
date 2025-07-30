@@ -28,5 +28,14 @@ add_subdirectory(include/glfw-3.4)
 add_subdirectory(include/stb)
 add_subdirectory(Rendering)
 
-target_include_directories(${PROJECT_NAME} PUBLIC include/glfw-3.4/include)
-target_link_libraries(${PROJECT_NAME} PRIVATE -static Vulkan::Vulkan Rendering glfw stb)
+# Set where the ImGui files are stored
+set(IMGUI_PATH  include/imgui)
+
+# Compile as static library
+file(GLOB IMGUI_SOURCES ${IMGUI_PATH}/*.cpp ${IMGUI_PATH}/backends/*.cpp)
+add_library(ImGui STATIC ${IMGUI_SOURCES})
+target_include_directories(ImGui PUBLIC ${IMGUI_PATH} ${IMGUI_PATH}/backends)
+target_link_libraries(ImGui PRIVATE Vulkan::Vulkan)
+
+target_include_directories(${PROJECT_NAME} PUBLIC ${IMGUI_PATH} ${IMGUI_PATH}/backends)
+target_link_libraries(${PROJECT_NAME} PUBLIC Vulkan::Vulkan Rendering glfw stb ImGui)

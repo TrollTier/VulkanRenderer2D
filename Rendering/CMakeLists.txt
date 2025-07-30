@@ -21,5 +21,4 @@ add_library(Rendering
         Buffer.h
 )
 
-target_include_directories(Rendering PUBLIC ../include/glfw-3.4/include)
 target_link_libraries(Rendering PRIVATE Vulkan::Vulkan glfw)

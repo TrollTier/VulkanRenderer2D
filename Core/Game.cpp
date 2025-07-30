@@ -10,7 +10,6 @@
 
 #include <iostream>
 #include <random>
-
 #include "../Rendering/VulkanRenderer.h"
 
 #include "../Core/World.h"
