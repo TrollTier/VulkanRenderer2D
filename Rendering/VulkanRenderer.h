@@ -5,14 +5,12 @@
 #include <GLFW/glfw3.h>
 #include <vector>
 
-#include <glm/gtc/matrix_transform.hpp>
-
 #include "Buffer.h"
-#include "InstanceData.h"
 #include "Pipeline.h"
 #include "Swapchain.h"
 #include "Texture2D.h"
 #include "VulkanRessources.h"
+#include "../Core/Camera.h"
 #include "../Core/Map.h"
 #include "../Core/Mesh.h"
 #include "../Core/World.h"
@@ -25,7 +23,10 @@ public:
     void initialize(bool enableValidationLayers, std::shared_ptr<VulkanWindow> window);
     size_t loadTexture(const char* texturePath);
 
-    void draw_scene(const Map& map, const World& world);
+    void draw_scene(
+        const Camera& camera,
+        const Map& map,
+        const World& world);
 
 private:
     const std::vector<const char*> m_validationLayers = {
@@ -67,8 +68,13 @@ private:
         VkDeviceMemory& dstBufferMemory
     );
 
-    void updateCamera(size_t imageIndex);
-    void updateObjectsBuffer(VkCommandBuffer commandBuffer, size_t imageIndex, const Map &map, const World &world);
+    void updateCamera(const Camera& camera, size_t imageIndex);
+    uint32_t updateObjectsBuffer(
+        VkCommandBuffer commandBuffer,
+        size_t imageIndex,
+        const Camera& camera,
+        const Map& map,
+        const World& world);
 
     static void imageToAttachmentLayout(SwapchainElement* element);
     static void imageToPresentLayout(SwapchainElement* element);

@@ -20,7 +20,10 @@ add_executable(FireEmblemClone main.cpp
         Core/Tile.cpp
         Core/Tile.h
         Core/Map.cpp
-        Core/Map.h)
+        Core/Map.h
+        Core/Camera.cpp
+        Core/Camera.h
+        Core/ViewFrustrum.h)
 
 set( GLFW_BUILD_DOCS OFF CACHE BOOL  "GLFW lib only" )
 add_subdirectory(include/glfw-3.4)

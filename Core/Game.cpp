@@ -10,6 +10,8 @@
 
 #include <iostream>
 #include <random>
+
+#include "Timestep.h"
 #include "../Rendering/VulkanRenderer.h"
 
 #include "../Core/World.h"
@@ -35,35 +37,60 @@ Game::Game()
     m_world = std::make_unique<World>();
     m_map = std::make_unique<Map>(50, 50, 64);
 
+    const auto windowExtent = m_vulkanWindow->getWindowExtent();
+
+    const CameraArea visibleArea
+    {
+        static_cast<float>(windowExtent.width) / static_cast<float>(m_map->getTileSize()),
+        static_cast<float>(windowExtent.height) / static_cast<float>(m_map->getTileSize()),
+        1.0f,
+        10.0f
+    };
+
+    m_camera = std::make_unique<Camera>(
+        glm::vec3(m_map->getColumns() / 2.0f, m_map->getRows() / 2.0f, 0.0f),
+        visibleArea,
+        windowExtent.width,
+        windowExtent.height);
+
     glfwSetMouseButtonCallback(m_window, Game::glfwMouseButtonHandler);
 }
 
 void Game::RunLoop()
 {
+    auto startOfLastUpdate = std::chrono::high_resolution_clock::now();
+
     while (!glfwWindowShouldClose(m_window))
     {
         const auto startOfFrame = std::chrono::high_resolution_clock::now();
 
         glfwPollEvents();
 
-        const auto startOfUpdate = std::chrono::high_resolution_clock::now();
+        auto startOfCurrentUpdate = std::chrono::high_resolution_clock::now();
+        const std::chrono::duration<float, std::milli> durationSinceLastUpdate =
+            startOfCurrentUpdate - startOfLastUpdate;
 
-        // TODO world update
+        const Timestep step
+        {
+            durationSinceLastUpdate.count(),
+            durationSinceLastUpdate.count() / 1000
+        };
 
-        const auto endOfUpdate = std::chrono::high_resolution_clock::now();
+        handleKeyInput(step);
+
+        startOfLastUpdate = startOfCurrentUpdate;
+
         const auto startOfRender = std::chrono::high_resolution_clock::now();
 
-        m_renderer->draw_scene(*m_map, *m_world);
+        m_renderer->draw_scene(*m_camera, *m_map, *m_world);
 
         const auto endOfRender = std::chrono::high_resolution_clock::now();
 
         const auto endOfFrame = std::chrono::high_resolution_clock::now();
         const auto frameDuration = endOfFrame - startOfFrame;
-        const auto updateDuration = endOfUpdate - startOfUpdate;
         const auto renderDuration = endOfRender - startOfRender;
 
         std::cout << "Frame:" << std::chrono::duration_cast<std::chrono::milliseconds>(frameDuration).count() << std::endl;
-        std::cout << "Update:" << std::chrono::duration_cast<std::chrono::milliseconds>(updateDuration).count() << std::endl;
         std::cout << "Render:" << std::chrono::duration_cast<std::chrono::milliseconds>(renderDuration).count() << std::endl;
     }
 }
@@ -79,11 +106,55 @@ void Game::mouseButtonCallback(int button, int action, int mods)
     glfwGetCursorPos(m_window, &xpos, &ypos);
 
     const uint16_t tileSize = m_map->getTileSize();
-    const auto tileRow = static_cast<uint16_t>(std::floor(ypos / tileSize));
-    const auto tileColumn = static_cast<uint16_t>(std::floor(xpos / tileSize));
+    const auto& frustum = m_camera->getFrustum();
+
+    const auto widthToWorldX = xpos / tileSize + frustum.x;
+    const auto heightToWorldY = ypos / tileSize + frustum.y;
+
+    const auto tileRow = static_cast<uint16_t>(std::floor(heightToWorldY));
+    const auto tileColumn = static_cast<uint16_t>(std::floor(widthToWorldX));
 
     auto& tile = m_map->getTileAt(tileColumn, tileRow);
     tile.sprite.textureIndex =  (tile.sprite.textureIndex + 1) % m_textureIndices.size();
+}
+
+void Game::handleKeyInput(const Timestep& timestep)
+{
+    glm::vec3 cameraMovement(0.0f, 0.0f, 0.0f);
+
+    int state = glfwGetKey(m_window, GLFW_KEY_W);
+    if (state == GLFW_PRESS)
+    {
+        cameraMovement.y = -1;
+    }
+
+    state = glfwGetKey(m_window, GLFW_KEY_S);
+    if (state == GLFW_PRESS)
+    {
+        cameraMovement.y = 1;
+    }
+
+    state = glfwGetKey(m_window, GLFW_KEY_A);
+    if (state == GLFW_PRESS)
+    {
+        cameraMovement.x = -1;
+    }
+
+    state = glfwGetKey(m_window, GLFW_KEY_D);
+    if (state == GLFW_PRESS)
+    {
+        cameraMovement.x = 1;
+    }
+
+    if (glm::length(cameraMovement) < 0.1f)
+    {
+        return;
+    }
+
+    cameraMovement = glm::normalize(cameraMovement);
+    cameraMovement *= timestep.deltaSeconds;
+
+    m_camera->moveBy(cameraMovement);
 }
 
 

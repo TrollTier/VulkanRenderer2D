@@ -9,6 +9,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
 #include <iostream>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "CameraUniformData.h"
 #include "VulkanRessources.h"
@@ -16,6 +17,7 @@
 #include "GLFW/glfw3native.h"
 
 #include "InstanceData.h"
+#include "../Core/Camera.h"
 
 VulkanRenderer::~VulkanRenderer()
 {
@@ -375,22 +377,11 @@ void VulkanRenderer::createBufferWithData(
     vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
 
-void VulkanRenderer::updateCamera(size_t imageIndex)
+void VulkanRenderer::updateCamera(const Camera& camera, size_t imageIndex)
 {
-    glm::vec3 eye    = glm::vec3(0.0f, 0.0f, 1.0f);
-    glm::vec3 center = glm::vec3(0.0f, 0.0f, 0.0f);
-    glm::vec3 up     = glm::vec3(0.0f, 1.0f, 0.0f);
-    glm::mat4 view = glm::lookAt(eye, center, up);
-
-    glm::mat4 projection = glm::ortho(
-        0.0f,
-        (float)m_swapchain->m_width,
-        0.0f,
-        (float)m_swapchain->m_height);
-
     const auto constants = CameraUniformData
     {
-        projection * view
+        camera.getViewProjectionMatrix()
     };
 
     memcpy(
@@ -399,7 +390,12 @@ void VulkanRenderer::updateCamera(size_t imageIndex)
         sizeof(CameraUniformData));
 }
 
-void VulkanRenderer::updateObjectsBuffer(VkCommandBuffer commandBuffer, size_t imageIndex, const Map &map, const World &world)
+uint32_t VulkanRenderer::updateObjectsBuffer(
+    VkCommandBuffer commandBuffer,
+    size_t imageIndex,
+    const Camera& camera,
+    const Map& map,
+    const World& world)
 {
     VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -418,30 +414,55 @@ void VulkanRenderer::updateObjectsBuffer(VkCommandBuffer commandBuffer, size_t i
     const auto& stagingBuffer = *m_objectStagingBuffers[imageIndex];
     const auto objectSSBO = (InstanceData*)stagingBuffer.getBufferMappedMemoryWritable();
 
+    uint32_t objectsToDraw = 0;
+    const auto& frustum = camera.getFrustum();
+
+    const auto offsetX = frustum.x;
+    const auto offsetY = frustum.y;
+
     for (int i = 0; i < tiles.size(); i++)
     {
         const auto tile = tiles[i];
-        const glm::vec3 worldPos = glm::vec3(tile.column * tileSize, tile.row * tileSize, 0);
 
-        objectSSBO[i].modelMatrix =
-            glm::translate(glm::mat4(1.0f), worldPos) *
-            glm::scale(glm::mat4(1), glm::vec3(64.0f, 64.0f, 1.0f));
-        objectSSBO[i].textureIndex = tile.sprite.textureIndex;
+        if ((tile.column + 1) < frustum.x || tile.column > frustum.toX ||
+            (tile.row + 1) < frustum.y || tile.row > frustum.toY)
+        {
+            continue;
+        }
+
+        const glm::vec3 screenPosition = glm::vec3(
+            (tile.column - offsetX) * tileSize,
+            (tile.row - offsetY) * tileSize,
+            0);
+
+        objectSSBO[objectsToDraw].modelMatrix =
+            glm::translate(glm::mat4(1.0f), screenPosition) *
+            glm::scale(glm::mat4(1), glm::vec3(tileSize, tileSize, 1.0f));
+        objectSSBO[objectsToDraw].textureIndex = tile.sprite.textureIndex;
+
+        objectsToDraw++;
     }
-
-    const auto objectsOffset = tiles.size();
 
     for (int i = 0; i < gameObjects.size(); i++)
     {
         const auto gameObject = gameObjects[i];
+        const auto worldPosition = gameObject.getWorldPosition();
 
-        objectSSBO[i + objectsOffset].modelMatrix =
+        if ((worldPosition.x + 1) < frustum.x || worldPosition.x > frustum.toX ||
+            (worldPosition.y + 1) < frustum.y || worldPosition.y > frustum.toY)
+        {
+            continue;
+        }
+
+        objectSSBO[objectsToDraw].modelMatrix =
             glm::translate(glm::mat4(1.0f), gameObject.getWorldPosition()) *
-            glm::scale(glm::mat4(1), glm::vec3(64.0f, 64.0f, 1.0f));
-        objectSSBO[i + objectsOffset].textureIndex = gameObject.getSprite().textureIndex;
+            glm::scale(glm::mat4(1), glm::vec3(tileSize, tileSize, 1.0f));
+        objectSSBO[objectsToDraw].textureIndex = gameObject.getSprite().textureIndex;
+
+        objectsToDraw++;
     }
 
-    const auto stagingBufferSize = sizeof(InstanceData) * (tiles.size() + gameObjects.size());
+    const auto stagingBufferSize = sizeof(InstanceData) * objectsToDraw;
 
     // Copy data to staging buffer
     memcpy(stagingBuffer.getBufferMappedMemoryWritable(), objectSSBO, stagingBufferSize);
@@ -460,10 +481,15 @@ void VulkanRenderer::updateObjectsBuffer(VkCommandBuffer commandBuffer, size_t i
 
     vkQueueSubmit(m_vulkanRessources->m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(m_vulkanRessources->m_graphicsQueue);
+
+    return objectsToDraw;
 }
 
 
-void VulkanRenderer::draw_scene(const Map& map, const World& world)
+void VulkanRenderer::draw_scene(
+    const Camera& camera,
+    const Map& map,
+    const World& world)
 {
     const auto currentFrameElement = m_swapchain->getCurrentFrame();
 
@@ -515,8 +541,14 @@ void VulkanRenderer::draw_scene(const Map& map, const World& world)
 
     vkResetCommandBuffer(currentImageElement->commandBuffer, 0);
 
-    updateCamera(imageIndex);
-    updateObjectsBuffer(currentImageElement->commandBuffer, imageIndex, map, world);
+    updateCamera(camera, imageIndex);
+
+    const uint32_t objectsToDraw = updateObjectsBuffer(
+        currentImageElement->commandBuffer,
+        imageIndex,
+        camera,
+        map,
+        world);
 
     VkCommandBufferBeginInfo beginInfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -594,13 +626,10 @@ void VulkanRenderer::draw_scene(const Map& map, const World& world)
     vkCmdBindVertexBuffers(currentImageElement->commandBuffer, 0, 1, vertexBuffers, offsets);
     vkCmdBindIndexBuffer(currentImageElement->commandBuffer, m_indexBuffers[meshIndex], 0, VK_INDEX_TYPE_UINT16);
 
-    const auto indices = mesh.getIndices().size();
-    const auto objectsCount  = map.getTiles().size() + world.getGameObjects().size();
-
     vkCmdDrawIndexed(
         currentImageElement->commandBuffer,
-        static_cast<uint32_t>(indices),
-        objectsCount,
+        mesh.getIndices().size(),
+        objectsToDraw,
         0,
         0,
         0);

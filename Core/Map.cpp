@@ -51,5 +51,16 @@ size_t Map::getTileSize() const
     return m_tileSize;
 }
 
+size_t Map::getColumns() const
+{
+    return m_columns;
+}
+
+size_t Map::getRows() const
+{
+    return m_rows;
+}
+
+
 
 

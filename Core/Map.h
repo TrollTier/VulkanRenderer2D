@@ -29,6 +29,8 @@ public:
     [[nodiscard]] Tile& getTileAt(uint16_t column, uint16_t row) const;
     [[nodiscard]] const std::vector<Tile>& getTiles() const;
     [[nodiscard]] size_t getTileSize() const;
+    [[nodiscard]] size_t getRows() const;
+    [[nodiscard]] size_t getColumns() const;
 
 private:
     uint16_t m_rows = 0;

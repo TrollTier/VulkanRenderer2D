@@ -11,7 +11,6 @@ add_library(Rendering
         VulkanWindow.h
         Pipeline.cpp
         Pipeline.h
-        ObjectPushConstants.h
         Texture2D.cpp
         Texture2D.h
         ImageLoader.h
