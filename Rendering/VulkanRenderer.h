@@ -13,7 +13,6 @@
 #include "Swapchain.h"
 #include "Texture2D.h"
 #include "VulkanRessources.h"
-#include "../Core/GameObject.h"
 #include "../Core/Map.h"
 #include "../Core/Mesh.h"
 #include "../Core/World.h"
@@ -48,7 +47,6 @@ private:
     std::vector<VkBuffer> m_indexBuffers {1, VK_NULL_HANDLE};
     std::vector<VkDeviceMemory> m_indexBufferMemories {1, VK_NULL_HANDLE};
 
-    std::vector<InstanceData> m_instances {1};
     std::vector<std::unique_ptr<Buffer>> m_cameraBuffers{};
 
     std::vector<std::unique_ptr<Buffer>> m_objectBuffers{};
@@ -69,13 +67,8 @@ private:
     );
 
     void updateCamera(size_t imageIndex);
-    void updateUniformBuffer(
-        VkCommandBuffer commandBuffer,
-        const glm::vec3& worldPosition,
-        const size_t textureIndex);
 
     static void imageToAttachmentLayout(SwapchainElement* element);
-
     static void imageToPresentLayout(SwapchainElement* element);
 };
 

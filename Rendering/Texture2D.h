@@ -26,6 +26,8 @@ private:
     VkImage m_textureImage = VK_NULL_HANDLE;
     VkImageView m_textureImageView = VK_NULL_HANDLE;
     VkDeviceMemory m_textureImageMemory = VK_NULL_HANDLE;
+    uint32_t m_textureWidth = 0;
+    uint32_t m_textureHeight = 0;
 
     void createImage(
         uint32_t width,

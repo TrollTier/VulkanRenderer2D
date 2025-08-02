@@ -392,27 +392,6 @@ void VulkanRenderer::updateCamera(size_t imageIndex)
         sizeof(CameraUniformData));
 }
 
-void VulkanRenderer::updateUniformBuffer(
-    VkCommandBuffer commandBuffer,
-    const glm::vec3& worldPosition,
-    const size_t textureIndex) {
-
-    glm::mat4 model =
-        glm::translate(glm::mat4(1.0f), worldPosition) *
-        glm::scale(glm::mat4(1), glm::vec3(64.0f, 64.0f, 1.0f));
-
-    ObjectPushConstants ubo{};
-    ubo.modelMatrix = model;
-    ubo.textureIndex = textureIndex;
-
-    vkCmdPushConstants(
-        commandBuffer,
-        m_pipeline->getLayout(),
-        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-        0,
-        sizeof(ObjectPushConstants), &ubo);
-}
-
 void VulkanRenderer::draw_scene(const Map& map, const World& world)
 {
     const auto currentFrameElement = m_swapchain->getCurrentFrame();
@@ -577,41 +556,6 @@ void VulkanRenderer::draw_scene(const Map& map, const World& world)
             glm::scale(glm::mat4(1), glm::vec3(64.0f, 64.0f, 1.0f));
         objectSSBO[i + objectsOffset].textureIndex = gameObject.getSprite().textureIndex;
     }
-
-    // for (const auto& tile : tiles)
-    // {
-    //     updateUniformBuffer(
-    //         currentImageElement->commandBuffer,
-    //         glm::vec3(tile.column * tileSize, tile.row * tileSize, 0),
-    //         tile.sprite.textureIndex);
-    //
-    //     vkCmdDrawIndexed(
-    //         currentImageElement->commandBuffer,
-    //         static_cast<uint32_t>(indices),
-    //         1,
-    //         0,
-    //         0,
-    //         0);
-    // }
-
-    // for (const auto& gameObject : world.getGameObjects())
-    // {
-    //     const size_t index = gameObject.getIndex();
-    //     const InstanceData& instanceData = m_instances[index];
-    //
-    //     updateUniformBuffer(
-    //         currentImageElement->commandBuffer,
-    //         gameObject.getWorldPosition(),
-    //         gameObject.getSprite().textureIndex);
-    //
-    //     vkCmdDrawIndexed(
-    //         currentImageElement->commandBuffer,
-    //         static_cast<uint32_t>(indices),
-    //         1,
-    //         0,
-    //         0,
-    //         0);
-    // }
 
     vkCmdDrawIndexed(
         currentImageElement->commandBuffer,

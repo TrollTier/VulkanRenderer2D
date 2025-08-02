@@ -37,6 +37,9 @@ Texture2D::Texture2D(
         m_textureImage,
         m_textureImageMemory);
 
+    m_textureHeight = static_cast<uint32_t>(imageInfo.height);
+    m_textureWidth = static_cast<uint32_t>(imageInfo.width);
+
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
 
