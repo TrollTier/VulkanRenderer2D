@@ -7,7 +7,7 @@
 #include <memory>
 #include <vulkan/vulkan.h>
 
-#include "ObjectPushConstants.h"
+#include "InstanceData.h"
 #include "VulkanRessources.h"
 
 class Pipeline

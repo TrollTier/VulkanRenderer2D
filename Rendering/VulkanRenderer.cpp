@@ -15,7 +15,7 @@
 #include "VulkanWindow.h"
 #include "GLFW/glfw3native.h"
 
-#include "ObjectPushConstants.h"
+#include "InstanceData.h"
 
 VulkanRenderer::~VulkanRenderer()
 {
@@ -102,14 +102,14 @@ void VulkanRenderer::initialize(
         m_objectBuffers.emplace_back(
             std::make_unique<Buffer>(
                 m_vulkanRessources,
-                sizeof(ObjectPushConstants) * 10000,
+                sizeof(InstanceData) * 10000,
                 VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
 
         VkDescriptorBufferInfo bufferInfo{};
         bufferInfo.buffer = m_objectBuffers[i]->getBuffer();
         bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(ObjectPushConstants) * 10000;
+        bufferInfo.range = sizeof(InstanceData) * 10000;
 
         VkWriteDescriptorSet writeDescriptorSet{};
         writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -531,7 +531,7 @@ void VulkanRenderer::draw_scene(const Map& map, const World& world)
 
     void* objectData = objectBuffer->getBufferMappedMemoryWritable();
 
-    auto* objectSSBO = (ObjectPushConstants*)objectData;
+    auto* objectSSBO = (InstanceData*)objectData;
 
     for (int i = 0; i < tiles.size(); i++)
     {

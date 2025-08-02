@@ -7,7 +7,7 @@
 
 #include <glm/glm.hpp>
 
-struct ObjectPushConstants {
+struct InstanceData {
     glm::mat4 modelMatrix;
     uint32_t textureIndex;
     uint32_t padding1;
