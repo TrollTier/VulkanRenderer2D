@@ -49,6 +49,7 @@ private:
 
     std::vector<std::unique_ptr<Buffer>> m_cameraBuffers{};
 
+    std::vector<std::unique_ptr<Buffer>> m_objectStagingBuffers{};
     std::vector<std::unique_ptr<Buffer>> m_objectBuffers{};
     std::vector<VkDescriptorSet> m_objectBufferDescriptors{};
 

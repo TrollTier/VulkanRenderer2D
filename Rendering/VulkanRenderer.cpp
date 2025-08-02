@@ -99,6 +99,13 @@ void VulkanRenderer::initialize(
                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
 
+        m_objectStagingBuffers.emplace_back(
+            std::make_unique<Buffer>(
+                m_vulkanRessources,
+                sizeof(InstanceData) * 10000,
+                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+
         m_objectBuffers.emplace_back(
             std::make_unique<Buffer>(
                 m_vulkanRessources,
@@ -408,7 +415,8 @@ void VulkanRenderer::updateObjectsBuffer(VkCommandBuffer commandBuffer, size_t i
     const auto& tiles = map.getTiles();
     const auto& gameObjects = world.getGameObjects();
 
-    std::vector<InstanceData> objectSSBO(tiles.size() + gameObjects.size());
+    const auto& stagingBuffer = *m_objectStagingBuffers[imageIndex];
+    const auto objectSSBO = (InstanceData*)stagingBuffer.getBufferMappedMemoryWritable();
 
     for (int i = 0; i < tiles.size(); i++)
     {
@@ -433,15 +441,10 @@ void VulkanRenderer::updateObjectsBuffer(VkCommandBuffer commandBuffer, size_t i
         objectSSBO[i + objectsOffset].textureIndex = gameObject.getSprite().textureIndex;
     }
 
-    const auto stagingBufferSize = sizeof(InstanceData) * objectSSBO.size();
-    Buffer stagingBuffer(
-        m_vulkanRessources,
-        stagingBufferSize,
-        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    const auto stagingBufferSize = sizeof(InstanceData) * (tiles.size() + gameObjects.size());
 
     // Copy data to staging buffer
-    memcpy(stagingBuffer.getBufferMappedMemoryWritable(), objectSSBO.data(), stagingBufferSize);
+    memcpy(stagingBuffer.getBufferMappedMemoryWritable(), objectSSBO, stagingBufferSize);
 
     VkBufferCopy copyRegion{};
     copyRegion.srcOffset = 0;
