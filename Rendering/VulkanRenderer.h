@@ -67,6 +67,7 @@ private:
     );
 
     void updateCamera(size_t imageIndex);
+    void updateObjectsBuffer(VkCommandBuffer commandBuffer, size_t imageIndex, const Map &map, const World &world);
 
     static void imageToAttachmentLayout(SwapchainElement* element);
     static void imageToPresentLayout(SwapchainElement* element);

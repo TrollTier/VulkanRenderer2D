@@ -103,8 +103,8 @@ void VulkanRenderer::initialize(
             std::make_unique<Buffer>(
                 m_vulkanRessources,
                 sizeof(InstanceData) * 10000,
-                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
+                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
 
         VkDescriptorBufferInfo bufferInfo{};
         bufferInfo.buffer = m_objectBuffers[i]->getBuffer();
@@ -392,6 +392,74 @@ void VulkanRenderer::updateCamera(size_t imageIndex)
         sizeof(CameraUniformData));
 }
 
+void VulkanRenderer::updateObjectsBuffer(VkCommandBuffer commandBuffer, size_t imageIndex, const Map &map, const World &world)
+{
+    VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to begin recording command buffer!");
+    }
+
+    const auto& objectBuffer = m_objectBuffers[imageIndex];
+
+    const auto tileSize = map.getTileSize();
+    const auto& tiles = map.getTiles();
+    const auto& gameObjects = world.getGameObjects();
+
+    std::vector<InstanceData> objectSSBO(tiles.size() + gameObjects.size());
+
+    for (int i = 0; i < tiles.size(); i++)
+    {
+        const auto tile = tiles[i];
+        const glm::vec3 worldPos = glm::vec3(tile.column * tileSize, tile.row * tileSize, 0);
+
+        objectSSBO[i].modelMatrix =
+            glm::translate(glm::mat4(1.0f), worldPos) *
+            glm::scale(glm::mat4(1), glm::vec3(64.0f, 64.0f, 1.0f));
+        objectSSBO[i].textureIndex = tile.sprite.textureIndex;
+    }
+
+    const auto objectsOffset = tiles.size();
+
+    for (int i = 0; i < gameObjects.size(); i++)
+    {
+        const auto gameObject = gameObjects[i];
+
+        objectSSBO[i + objectsOffset].modelMatrix =
+            glm::translate(glm::mat4(1.0f), gameObject.getWorldPosition()) *
+            glm::scale(glm::mat4(1), glm::vec3(64.0f, 64.0f, 1.0f));
+        objectSSBO[i + objectsOffset].textureIndex = gameObject.getSprite().textureIndex;
+    }
+
+    const auto stagingBufferSize = sizeof(InstanceData) * objectSSBO.size();
+    Buffer stagingBuffer(
+        m_vulkanRessources,
+        stagingBufferSize,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    // Copy data to staging buffer
+    memcpy(stagingBuffer.getBufferMappedMemoryWritable(), objectSSBO.data(), stagingBufferSize);
+
+    VkBufferCopy copyRegion{};
+    copyRegion.srcOffset = 0;
+    copyRegion.dstOffset = 0;
+    copyRegion.size = stagingBufferSize;
+
+    vkCmdCopyBuffer(commandBuffer, stagingBuffer.getBuffer(), objectBuffer->getBuffer(), 1, &copyRegion);
+    vkEndCommandBuffer(commandBuffer);
+
+    VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+
+    vkQueueSubmit(m_vulkanRessources->m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(m_vulkanRessources->m_graphicsQueue);
+}
+
+
 void VulkanRenderer::draw_scene(const Map& map, const World& world)
 {
     const auto currentFrameElement = m_swapchain->getCurrentFrame();
@@ -443,6 +511,9 @@ void VulkanRenderer::draw_scene(const Map& map, const World& world)
     vkResetFences(m_vulkanRessources->m_logicalDevice, 1, &(currentFrameElement->fence));
 
     vkResetCommandBuffer(currentImageElement->commandBuffer, 0);
+
+    updateCamera(imageIndex);
+    updateObjectsBuffer(currentImageElement->commandBuffer, imageIndex, map, world);
 
     VkCommandBufferBeginInfo beginInfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -496,8 +567,6 @@ void VulkanRenderer::draw_scene(const Map& map, const World& world)
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         m_pipeline->getPipeline());
 
-    updateCamera(imageIndex);
-
     std::vector<VkDescriptorSet> descriptorSets{};
     descriptorSets.push_back(m_defaultDescriptorSets[m_swapchain->getCurrentFrameIndex()]);
     descriptorSets.push_back(m_objectBufferDescriptors[m_swapchain->getCurrentFrameIndex()]);
@@ -523,44 +592,12 @@ void VulkanRenderer::draw_scene(const Map& map, const World& world)
     vkCmdBindIndexBuffer(currentImageElement->commandBuffer, m_indexBuffers[meshIndex], 0, VK_INDEX_TYPE_UINT16);
 
     const auto indices = mesh.getIndices().size();
-
-    const auto& objectBuffer = m_objectBuffers[imageIndex];
-
-    const auto tileSize = map.getTileSize();
-    const auto& tiles = map.getTiles();
-
-    void* objectData = objectBuffer->getBufferMappedMemoryWritable();
-
-    auto* objectSSBO = (InstanceData*)objectData;
-
-    for (int i = 0; i < tiles.size(); i++)
-    {
-        const auto tile = tiles[i];
-        const glm::vec3 worldPos = glm::vec3(tile.column * tileSize, tile.row * tileSize, 0);
-
-        objectSSBO[i].modelMatrix =
-            glm::translate(glm::mat4(1.0f), worldPos) *
-            glm::scale(glm::mat4(1), glm::vec3(64.0f, 64.0f, 1.0f));
-        objectSSBO[i].textureIndex = tile.sprite.textureIndex;
-    }
-
-    const auto objectsOffset = tiles.size();
-    const auto& gameObjects = world.getGameObjects();
-
-    for (int i = 0; i < gameObjects.size(); i++)
-    {
-        const auto gameObject = gameObjects[i];
-
-        objectSSBO[i + objectsOffset].modelMatrix =
-            glm::translate(glm::mat4(1.0f), gameObject.getWorldPosition()) *
-            glm::scale(glm::mat4(1), glm::vec3(64.0f, 64.0f, 1.0f));
-        objectSSBO[i + objectsOffset].textureIndex = gameObject.getSprite().textureIndex;
-    }
+    const auto objectsCount  = map.getTiles().size() + world.getGameObjects().size();
 
     vkCmdDrawIndexed(
         currentImageElement->commandBuffer,
         static_cast<uint32_t>(indices),
-        tiles.size() + gameObjects.size(),
+        objectsCount,
         0,
         0,
         0);
