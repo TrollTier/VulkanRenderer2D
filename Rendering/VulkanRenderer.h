@@ -18,9 +18,10 @@
 class VulkanRenderer
 {
 public:
+    VulkanRenderer(std::shared_ptr<VulkanRessources> resources);
     ~VulkanRenderer();
 
-    void initialize(bool enableValidationLayers, std::shared_ptr<VulkanWindow> window);
+    void initialize();
     size_t loadTexture(const char* texturePath);
 
     void draw_scene(
@@ -29,10 +30,6 @@ public:
         const World& world);
 
 private:
-    const std::vector<const char*> m_validationLayers = {
-        "VK_LAYER_KHRONOS_validation"
-    };
-
     std::vector<VkDescriptorSet> m_defaultDescriptorSets;
 
     std::shared_ptr<VulkanRessources> m_vulkanRessources;

@@ -7,6 +7,7 @@
 #include <memory>
 #include <stdexcept>
 
+#include "Buffer.h"
 #include "ImageLoader.h"
 #include "VulkanHelpers.h"
 #include "VulkanRessources.h"
@@ -40,22 +41,13 @@ Texture2D::Texture2D(
     m_textureHeight = static_cast<uint32_t>(imageInfo.height);
     m_textureWidth = static_cast<uint32_t>(imageInfo.width);
 
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-
-    VulkanHelpers::createBuffer(
-        m_vulkanRessources->m_logicalDevice,
-        m_vulkanRessources->m_physicalDevice,
+    Buffer stagingBuffer(
+        m_vulkanRessources,
         imageSize,
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        stagingBuffer,
-        stagingBufferMemory);
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    void* data;
-    vkMapMemory(m_vulkanRessources->m_logicalDevice, stagingBufferMemory, 0, imageSize, 0, &data);
-    memcpy(data, imageInfo.data, (imageSize));
-    vkUnmapMemory(m_vulkanRessources->m_logicalDevice, stagingBufferMemory);
+    stagingBuffer.writeData(imageInfo.data, imageSize);
 
     stbi_image_free(imageInfo.data);
 
@@ -222,7 +214,7 @@ void Texture2D::transitionImageLayout(
 }
 
 void Texture2D::copyBufferToImage(
-    VkBuffer buffer,
+    Buffer buffer,
     VkImage image,
     uint32_t width,
     uint32_t height)
@@ -259,7 +251,7 @@ void Texture2D::copyBufferToImage(
 
     vkCmdCopyBufferToImage(
         commandBuffer,
-        buffer,
+        buffer.getBuffer(),
         image,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1,

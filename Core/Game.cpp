@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <random>
+#include <thread>
 
 #include "Timestep.h"
 #include "../Rendering/VulkanRenderer.h"
@@ -27,9 +28,26 @@ Game::Game()
     glfwMaximizeWindow(m_window);
 
     m_vulkanWindow = std::make_shared<VulkanWindow>(m_window);
-    m_renderer = std::make_unique<VulkanRenderer>();
-    m_renderer->initialize(true, m_vulkanWindow);
 
+    std::vector<const char*> instanceExtensions{};
+    m_vulkanWindow->fillRequiredInstanceExtensions(instanceExtensions);
+    instanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    instanceExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+
+    const std::vector<const char*> m_validationLayers = {
+        "VK_LAYER_KHRONOS_validation"
+    };
+
+    m_vulkanRessources = std::make_shared<VulkanRessources>(m_vulkanWindow);
+    m_vulkanRessources->initialize(
+        true,
+        m_validationLayers,
+        instanceExtensions);
+
+    m_renderer = std::make_unique<VulkanRenderer>(m_vulkanRessources);
+    m_renderer->initialize();
+
+    m_textureIndices.push_back(m_renderer->loadTexture("../Assets/default_texture.jpg"));
     m_textureIndices.push_back(m_renderer->loadTexture("../Assets/texture.jpg"));
     m_textureIndices.push_back(m_renderer->loadTexture("../Assets/Flame.png"));
     m_textureIndices.push_back(m_renderer->loadTexture("../Assets/wood_1.png"));
@@ -152,7 +170,7 @@ void Game::handleKeyInput(const Timestep& timestep)
     }
 
     cameraMovement = glm::normalize(cameraMovement);
-    cameraMovement *= timestep.deltaSeconds;
+    cameraMovement *= 2 * timestep.deltaSeconds;
 
     m_camera->moveBy(cameraMovement);
 }

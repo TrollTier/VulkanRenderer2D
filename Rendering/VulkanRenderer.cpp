@@ -19,6 +19,11 @@
 #include "InstanceData.h"
 #include "../Core/Camera.h"
 
+VulkanRenderer::VulkanRenderer(std::shared_ptr<VulkanRessources> resources)
+{
+    m_vulkanRessources = resources;
+}
+
 VulkanRenderer::~VulkanRenderer()
 {
     const auto device = m_vulkanRessources->m_logicalDevice;
@@ -29,6 +34,8 @@ VulkanRenderer::~VulkanRenderer()
 
     m_objectBuffers.clear();
     m_cameraBuffers.clear();
+    m_objectStagingBuffers.clear();
+    m_textures.clear();
 
     for (size_t i = 0; i < m_indexBuffers.size(); i++)
     {
@@ -39,24 +46,25 @@ VulkanRenderer::~VulkanRenderer()
         vkDestroyBuffer(device, m_vertexBuffers[i], allocator);
     }
 
+    vkFreeDescriptorSets(
+            device,
+            descriptorPool,
+            m_objectBufferDescriptors.size(),
+            m_objectBufferDescriptors.data());
+    m_objectBufferDescriptors.clear();
+
+    vkFreeDescriptorSets(
+        device,
+        descriptorPool,
+        m_defaultDescriptorSets.size(),
+        m_defaultDescriptorSets.data());
+    m_defaultDescriptorSets.clear();
+
     vkDestroySampler(device, m_sampler, allocator);
 }
 
-void VulkanRenderer::initialize(
-    bool enableValidationLayers,
-    std::shared_ptr<VulkanWindow> window)
+void VulkanRenderer::initialize()
 {
-    std::vector<const char*> instanceExtensions{};
-    window->fillRequiredInstanceExtensions(instanceExtensions);
-    instanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    instanceExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
-
-    m_vulkanRessources = std::make_shared<VulkanRessources>(window);
-    m_vulkanRessources->initialize(
-        enableValidationLayers,
-        m_validationLayers,
-        instanceExtensions);
-
     m_swapchain = std::make_unique<Swapchain>(m_vulkanRessources);
     m_pipeline = std::make_unique<Pipeline>(
         m_vulkanRessources,
@@ -384,10 +392,7 @@ void VulkanRenderer::updateCamera(const Camera& camera, size_t imageIndex)
         camera.getViewProjectionMatrix()
     };
 
-    memcpy(
-        (void*)m_cameraBuffers[imageIndex]->getBufferMappedMemory(),
-        &constants,
-        sizeof(CameraUniformData));
+    m_cameraBuffers[imageIndex]->writeData(&constants, sizeof(CameraUniformData));
 }
 
 uint32_t VulkanRenderer::updateObjectsBuffer(
@@ -412,7 +417,7 @@ uint32_t VulkanRenderer::updateObjectsBuffer(
     const auto& gameObjects = world.getGameObjects();
 
     const auto& stagingBuffer = *m_objectStagingBuffers[imageIndex];
-    const auto objectSSBO = (InstanceData*)stagingBuffer.getBufferMappedMemoryWritable();
+    const auto objectSSBO = (InstanceData*)stagingBuffer.mapMemory(stagingBuffer.getSize());
 
     uint32_t objectsToDraw = 0;
     const auto& frustum = camera.getFrustum();
@@ -420,10 +425,8 @@ uint32_t VulkanRenderer::updateObjectsBuffer(
     const auto offsetX = frustum.x;
     const auto offsetY = frustum.y;
 
-    for (int i = 0; i < tiles.size(); i++)
+    for (auto tile : tiles)
     {
-        const auto tile = tiles[i];
-
         if ((tile.column + 1) < frustum.x || tile.column > frustum.toX ||
             (tile.row + 1) < frustum.y || tile.row > frustum.toY)
         {
@@ -443,9 +446,8 @@ uint32_t VulkanRenderer::updateObjectsBuffer(
         objectsToDraw++;
     }
 
-    for (int i = 0; i < gameObjects.size(); i++)
+    for (auto gameObject : gameObjects)
     {
-        const auto gameObject = gameObjects[i];
         const auto worldPosition = gameObject.getWorldPosition();
 
         if ((worldPosition.x + 1) < frustum.x || worldPosition.x > frustum.toX ||
@@ -462,10 +464,8 @@ uint32_t VulkanRenderer::updateObjectsBuffer(
         objectsToDraw++;
     }
 
+    stagingBuffer.unmapMemory();
     const auto stagingBufferSize = sizeof(InstanceData) * objectsToDraw;
-
-    // Copy data to staging buffer
-    memcpy(stagingBuffer.getBufferMappedMemoryWritable(), objectSSBO, stagingBufferSize);
 
     VkBufferCopy copyRegion{};
     copyRegion.srcOffset = 0;

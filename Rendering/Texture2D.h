@@ -8,6 +8,7 @@
 #include <vulkan/vulkan.h>
 #include <memory>
 
+#include "Buffer.h"
 #include "VulkanRessources.h"
 
 class Texture2D
@@ -46,7 +47,7 @@ private:
         VkImageLayout newLayout);
 
     void copyBufferToImage(
-        VkBuffer buffer,
+        Buffer buffer,
         VkImage image,
         uint32_t width,
         uint32_t height);

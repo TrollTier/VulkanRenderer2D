@@ -91,7 +91,7 @@ Swapchain::Swapchain(std::shared_ptr<VulkanRessources> ressources)
     createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     createInfo.preTransform = capabilities.currentTransform;
     createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    createInfo.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+    createInfo.presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
     createInfo.clipped = true;
 
     if(vkCreateSwapchainKHR(m_ressources->m_logicalDevice, &createInfo, m_ressources->m_allocator, &m_swapchain) != VK_SUCCESS)
