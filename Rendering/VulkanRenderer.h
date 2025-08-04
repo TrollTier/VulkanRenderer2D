@@ -18,7 +18,7 @@
 class VulkanRenderer
 {
 public:
-    VulkanRenderer(std::shared_ptr<VulkanRessources> resources);
+    VulkanRenderer(std::shared_ptr<VulkanRessources> resources, uint32_t pixelsPerUnit);
     ~VulkanRenderer();
 
     void initialize();
@@ -30,6 +30,7 @@ public:
         const World& world);
 
 private:
+    uint32_t m_pixelsPerUnit = 1;
     std::vector<VkDescriptorSet> m_defaultDescriptorSets;
 
     std::shared_ptr<VulkanRessources> m_vulkanRessources;

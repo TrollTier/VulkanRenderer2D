@@ -19,9 +19,10 @@
 #include "InstanceData.h"
 #include "../Core/Camera.h"
 
-VulkanRenderer::VulkanRenderer(std::shared_ptr<VulkanRessources> resources)
+VulkanRenderer::VulkanRenderer(std::shared_ptr<VulkanRessources> resources, uint32_t pixelsPerUnit)
 {
     m_vulkanRessources = resources;
+    m_pixelsPerUnit = pixelsPerUnit;
 }
 
 VulkanRenderer::~VulkanRenderer()
@@ -412,7 +413,6 @@ uint32_t VulkanRenderer::updateObjectsBuffer(
 
     const auto& objectBuffer = m_objectBuffers[imageIndex];
 
-    const auto tileSize = map.getTileSize();
     const auto& tiles = map.getTiles();
     const auto& gameObjects = world.getGameObjects();
 
@@ -434,13 +434,13 @@ uint32_t VulkanRenderer::updateObjectsBuffer(
         }
 
         const glm::vec3 screenPosition = glm::vec3(
-            (tile.column - offsetX) * tileSize,
-            (tile.row - offsetY) * tileSize,
+            (tile.column - offsetX) * m_pixelsPerUnit,
+            (tile.row - offsetY) * m_pixelsPerUnit,
             0);
 
         objectSSBO[objectsToDraw].modelMatrix =
             glm::translate(glm::mat4(1.0f), screenPosition) *
-            glm::scale(glm::mat4(1), glm::vec3(tileSize, tileSize, 1.0f));
+            glm::scale(glm::mat4(1), glm::vec3(m_pixelsPerUnit, m_pixelsPerUnit, 1.0f));
         objectSSBO[objectsToDraw].textureIndex = tile.sprite.textureIndex;
 
         objectsToDraw++;
@@ -458,7 +458,7 @@ uint32_t VulkanRenderer::updateObjectsBuffer(
 
         objectSSBO[objectsToDraw].modelMatrix =
             glm::translate(glm::mat4(1.0f), gameObject.getWorldPosition()) *
-            glm::scale(glm::mat4(1), glm::vec3(tileSize, tileSize, 1.0f));
+            glm::scale(glm::mat4(1), glm::vec3(m_pixelsPerUnit, m_pixelsPerUnit, 1.0f));
         objectSSBO[objectsToDraw].textureIndex = gameObject.getSprite().textureIndex;
 
         objectsToDraw++;

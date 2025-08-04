@@ -44,7 +44,7 @@ Game::Game()
         m_validationLayers,
         instanceExtensions);
 
-    m_renderer = std::make_unique<VulkanRenderer>(m_vulkanRessources);
+    m_renderer = std::make_unique<VulkanRenderer>(m_vulkanRessources, PIXELS_PER_UNIT);
     m_renderer->initialize();
 
     m_textureIndices.push_back(m_renderer->loadTexture("../Assets/default_texture.jpg"));
@@ -53,20 +53,20 @@ Game::Game()
     m_textureIndices.push_back(m_renderer->loadTexture("../Assets/wood_1.png"));
 
     m_world = std::make_unique<World>();
-    m_map = std::make_unique<Map>(50, 50, 64);
+    m_map = std::make_unique<Map>(50, 50, 1);
 
     const auto windowExtent = m_vulkanWindow->getWindowExtent();
 
     const CameraArea visibleArea
     {
-        static_cast<float>(windowExtent.width) / static_cast<float>(m_map->getTileSize()),
-        static_cast<float>(windowExtent.height) / static_cast<float>(m_map->getTileSize()),
+        static_cast<float>(windowExtent.width) / static_cast<float>(PIXELS_PER_UNIT),
+        static_cast<float>(windowExtent.height) / static_cast<float>(PIXELS_PER_UNIT),
         1.0f,
         10.0f
     };
 
     m_camera = std::make_unique<Camera>(
-        glm::vec3(m_map->getColumns() / 2.0f, m_map->getRows() / 2.0f, 0.0f),
+        glm::vec3((float)m_map->getColumns() / 2.0f, (float)m_map->getRows() / 2.0f, 0.0f),
         visibleArea,
         windowExtent.width,
         windowExtent.height);
@@ -123,11 +123,10 @@ void Game::mouseButtonCallback(int button, int action, int mods)
     double xpos, ypos;
     glfwGetCursorPos(m_window, &xpos, &ypos);
 
-    const uint16_t tileSize = m_map->getTileSize();
     const auto& frustum = m_camera->getFrustum();
 
-    const auto widthToWorldX = xpos / tileSize + frustum.x;
-    const auto heightToWorldY = ypos / tileSize + frustum.y;
+    const auto widthToWorldX = xpos / PIXELS_PER_UNIT + frustum.x;
+    const auto heightToWorldY = ypos / PIXELS_PER_UNIT + frustum.y;
 
     const auto tileRow = static_cast<uint16_t>(std::floor(heightToWorldY));
     const auto tileColumn = static_cast<uint16_t>(std::floor(widthToWorldX));

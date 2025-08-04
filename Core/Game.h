@@ -16,6 +16,8 @@
 class Game
 {
 public:
+    const uint32_t PIXELS_PER_UNIT = 64;
+
     Game();
 
     void RunLoop();

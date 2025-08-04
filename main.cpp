@@ -12,7 +12,8 @@ int main()
     try
     {
         game.RunLoop();
-    } catch (std::runtime_error ex)
+    }
+    catch (std::runtime_error ex)
     {
         std::cout << ex.what() << std::endl;
     }
