@@ -128,8 +128,13 @@ void Game::mouseButtonCallback(int button, int action, int mods)
     const auto widthToWorldX = xpos / PIXELS_PER_UNIT + frustum.x;
     const auto heightToWorldY = ypos / PIXELS_PER_UNIT + frustum.y;
 
-    const auto tileRow = static_cast<uint16_t>(std::floor(heightToWorldY));
-    const auto tileColumn = static_cast<uint16_t>(std::floor(widthToWorldX));
+    const auto tileRow = static_cast<int16_t>(std::floor(heightToWorldY));
+    const auto tileColumn = static_cast<int16_t>(std::floor(widthToWorldX));
+
+    if (tileRow < 0 || tileColumn < 0 )
+    {
+        return;
+    }
 
     if (m_map->isInMap(tileColumn, tileRow))
     {

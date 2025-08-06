@@ -43,7 +43,7 @@ Tile& Map::getTileAt(uint16_t column, uint16_t row) const
 
 bool Map::isInMap(uint16_t column, uint16_t row) const
 {
-    return (column >= 0 && column < m_columns && row >= 0 && row < m_rows);
+    return (column < m_columns && row < m_rows);
 }
 
 
