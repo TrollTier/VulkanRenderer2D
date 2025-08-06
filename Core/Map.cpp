@@ -31,15 +31,21 @@ Map::~Map()
     m_tiles->clear();
 }
 
-Tile &Map::getTileAt(uint16_t column, uint16_t row) const
+Tile& Map::getTileAt(uint16_t column, uint16_t row) const
 {
-    if (column < 0 || column > m_columns - 1 || row < 0 || row > m_rows - 1)
+    if (!isInMap(column, row))
     {
         throw std::runtime_error("Coordinates out of map bounds");
     }
 
     return m_tiles->at(column + (row * m_columns));
 }
+
+bool Map::isInMap(uint16_t column, uint16_t row) const
+{
+    return (column >= 0 && column < m_columns && row >= 0 && row < m_rows);
+}
+
 
 const std::vector<Tile>& Map::getTiles() const
 {

@@ -131,8 +131,11 @@ void Game::mouseButtonCallback(int button, int action, int mods)
     const auto tileRow = static_cast<uint16_t>(std::floor(heightToWorldY));
     const auto tileColumn = static_cast<uint16_t>(std::floor(widthToWorldX));
 
-    auto& tile = m_map->getTileAt(tileColumn, tileRow);
-    tile.sprite.textureIndex =  (tile.sprite.textureIndex + 1) % m_textureIndices.size();
+    if (m_map->isInMap(tileColumn, tileRow))
+    {
+        auto& tile = m_map->getTileAt(tileColumn, tileRow);
+        tile.sprite.textureIndex =  (tile.sprite.textureIndex + 1) % m_textureIndices.size();
+    }
 }
 
 void Game::handleKeyInput(const Timestep& timestep)
