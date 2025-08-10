@@ -47,7 +47,7 @@ private:
         VkImageLayout newLayout);
 
     void copyBufferToImage(
-        Buffer buffer,
+        Buffer& buffer,
         VkImage image,
         uint32_t width,
         uint32_t height);

@@ -214,7 +214,7 @@ void Texture2D::transitionImageLayout(
 }
 
 void Texture2D::copyBufferToImage(
-    Buffer buffer,
+    Buffer& buffer,
     VkImage image,
     uint32_t width,
     uint32_t height)
