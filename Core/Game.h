@@ -40,6 +40,9 @@ private:
 
     void handleKeyInput(const Timestep& timestep);
     static void glfwMouseButtonHandler(GLFWwindow* window, int button, int action, int mods);
+
+    void handleWindowResize();
+    static void glfwWindowResize(GLFWwindow* window, int width, int height);
 };
 
 #endif //GAME_H

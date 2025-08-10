@@ -76,7 +76,8 @@ Game::Game()
         windowExtent.width,
         windowExtent.height);
 
-    glfwSetMouseButtonCallback(m_window, Game::glfwMouseButtonHandler);
+    glfwSetMouseButtonCallback(m_window, glfwMouseButtonHandler);
+	glfwSetWindowSizeCallback(m_window, glfwWindowResize);
 }
 
 void Game::initImGui()
@@ -310,3 +311,31 @@ void Game::glfwMouseButtonHandler(GLFWwindow* window, int button, int action, in
     auto game = reinterpret_cast<Game*>(glfwGetWindowUserPointer(window));
     game->mouseButtonCallback(button, action, mods);
 }
+
+void Game::handleWindowResize()
+{
+	const auto windowExtent = m_vulkanWindow->getWindowExtent();
+
+	const CameraArea visibleArea
+	{
+		static_cast<float>(windowExtent.width) / static_cast<float>(PIXELS_PER_UNIT),
+		static_cast<float>(windowExtent.height) / static_cast<float>(PIXELS_PER_UNIT),
+		1.0f,
+		10.0f
+	};
+
+	m_camera = std::make_unique<Camera>(
+		glm::vec3((float)m_map->getColumns() / 2.0f, (float)m_map->getRows() / 2.0f, 0.0f),
+		visibleArea,
+		windowExtent.width,
+		windowExtent.height);
+}
+
+
+void Game::glfwWindowResize(GLFWwindow* window, int width, int height)
+{
+	auto game = reinterpret_cast<Game*>(glfwGetWindowUserPointer(window));
+	game->handleWindowResize();
+}
+
+

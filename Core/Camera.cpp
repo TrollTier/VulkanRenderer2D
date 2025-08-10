@@ -14,10 +14,20 @@ Camera::Camera(
 {
     m_extentsWidth = extentsWidth;
     m_extentsHeight = extentsHeight;
-    m_visibleArea = std::move(visibleArea);
+    m_visibleArea = visibleArea;
 
     updatePosition(worldPosition);
 }
+
+void Camera::resize(CameraArea visibleArea, float extentsWidth, float extentsHeight)
+{
+    m_visibleArea = visibleArea;
+    m_extentsWidth = extentsWidth;
+    m_extentsHeight = extentsHeight;
+
+    updatePosition(m_worldPosition);
+}
+
 
 void Camera::moveBy(glm::vec3 deltaPosition)
 {
@@ -32,6 +42,7 @@ void Camera::moveTo(glm::vec3 worldPosition)
 void Camera::updatePosition(glm::vec3 worldPosition)
 {
     m_worldPosition = worldPosition;
+
     glm::vec3 eye    = glm::vec3(0.0f, 0.0f, 1.0f);
     glm::vec3 center = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 up     = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -39,9 +50,9 @@ void Camera::updatePosition(glm::vec3 worldPosition)
 
     glm::mat4 projection = glm::ortho(
         0.0f,
-        (float)m_extentsWidth,
+        m_extentsWidth,
         0.0f,
-        (float)m_extentsHeight);
+        m_extentsHeight);
 
     m_viewProjectionMatrix = projection * view;
 

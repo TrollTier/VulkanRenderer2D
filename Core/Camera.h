@@ -28,14 +28,19 @@ public:
         float extentsWidth,
         float extentsHeight);
 
+    void resize(
+        CameraArea visibleArea,
+        float extentsWidth,
+        float extentsHeight);
+
     void moveTo(glm::vec3 worldPosition);
     void moveBy(glm::vec3 deltaPosition);
 
     [[nodiscard]] const glm::mat4& getViewProjectionMatrix() const;
     [[nodiscard]] const CameraFrustum& getFrustum() const;
 private:
-    glm::vec3 m_worldPosition;
-    glm::mat4 m_viewProjectionMatrix;
+    glm::vec3 m_worldPosition = glm::vec3(1);
+    glm::mat4 m_viewProjectionMatrix = glm::mat4(1.0f);
     float m_extentsWidth = 1.0f;
     float m_extentsHeight = 1.0f;
     CameraArea m_visibleArea{1.0f, 1.0f, 1.0f, 1.0f};
