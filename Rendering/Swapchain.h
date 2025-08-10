@@ -27,12 +27,12 @@ public:
     SwapchainElement* getFrameAt(size_t index);
     void moveToNextFrame();
 
-    size_t getImageCount()
+    [[nodiscard]] size_t getImageCount() const
     {
         return m_swapChainElements.size();
     }
 
-    size_t getCurrentFrameIndex()
+    [[nodiscard]] size_t getCurrentFrameIndex() const
     {
         return m_currentFrame;;
     }

@@ -116,7 +116,7 @@ void* Buffer::mapMemory(VkDeviceSize length) const
 
 void Buffer::unmapMemory() const
 {
-    if (!m_resources.expired())
+    if (m_resources.expired())
     {
         return;
     }

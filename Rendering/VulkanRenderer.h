@@ -33,7 +33,8 @@ public:
 
     [[nodiscard]] const Swapchain& getSwapchain() const
     {
-        return *m_swapchain;
+        const Swapchain& ptr = *m_swapchain;
+        return ptr;
     }
 
 private:

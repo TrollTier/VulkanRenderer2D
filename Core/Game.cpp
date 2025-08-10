@@ -163,6 +163,12 @@ void Game::initImGui()
         throw std::runtime_error("failed to create ImGui render pass!");
     }
 
+	VkPipelineRenderingCreateInfoKHR info{VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR};
+	info.pColorAttachmentFormats = &m_renderer->getSwapchain().m_format.format;
+	info.colorAttachmentCount = 1;
+
+	const size_t imageCount = m_renderer->getSwapchain().getImageCount();
+
 	// Setup Platform/Renderer backends
 	ImGui_ImplGlfw_InitForVulkan(m_window, true);
 	ImGui_ImplVulkan_InitInfo init_info = {};
@@ -174,10 +180,12 @@ void Game::initImGui()
 	init_info.Queue = m_vulkanRessources->m_graphicsQueue;
 	init_info.DescriptorPool = m_imGuiPool;
 	init_info.Subpass = 0;
-	init_info.MinImageCount = 2;// TODO get from swapchain
-	init_info.ImageCount = 2; // TODO get from swapchain
+	init_info.MinImageCount = imageCount;
+	init_info.ImageCount = imageCount;
 	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-	init_info.RenderPass = m_imGuiPass;
+	init_info.RenderPass = nullptr;
+	init_info.UseDynamicRendering = true;
+	init_info.PipelineRenderingCreateInfo = info;
 	ImGui_ImplVulkan_Init(&init_info);
 }
 
