@@ -12,7 +12,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "CameraUniformData.h"
-#include "VulkanRessources.h"
+#include "VulkanResources.h"
 #include "VulkanWindow.h"
 #include "GLFW/glfw3native.h"
 
@@ -22,7 +22,7 @@
 #include "../include/imgui/imgui.h"
 #include "../include/imgui/backends/imgui_impl_vulkan.h"
 
-VulkanRenderer::VulkanRenderer(std::shared_ptr<VulkanRessources> resources, uint32_t pixelsPerUnit)
+VulkanRenderer::VulkanRenderer(std::shared_ptr<VulkanResources> resources, uint32_t pixelsPerUnit)
 {
     m_vulkanRessources = resources;
     m_pixelsPerUnit = pixelsPerUnit;

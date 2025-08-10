@@ -26,7 +26,7 @@ public:
 private:
     GLFWwindow* m_window;
     std::shared_ptr<VulkanWindow> m_vulkanWindow;
-    std::shared_ptr<VulkanRessources> m_vulkanRessources;
+    std::shared_ptr<VulkanResources> m_vulkanRessources;
     std::unique_ptr<VulkanRenderer> m_renderer;
     std::unique_ptr<World> m_world;
     std::unique_ptr<Map> m_map;

@@ -8,14 +8,14 @@
 #include <vulkan/vulkan.h>
 
 #include "InstanceData.h"
-#include "VulkanRessources.h"
+#include "VulkanResources.h"
 
 class Pipeline
 {
 public:
     ~Pipeline();
     Pipeline(
-        std::shared_ptr<VulkanRessources> ressources,
+        std::shared_ptr<VulkanResources> ressources,
         std::string vertexShaderPath,
         std::string fragmentShaderPath,
         size_t swapchainImageCount,
@@ -47,7 +47,7 @@ public:
     }
 
 private:
-    std::shared_ptr<VulkanRessources> m_vulkanRessources;
+    std::shared_ptr<VulkanResources> m_vulkanRessources;
 
     VkDescriptorSetLayout m_descriptorSetLayout = VK_NULL_HANDLE;
     VkDescriptorSetLayout m_descriptorSetLayoutObjectsBuffer = VK_NULL_HANDLE;

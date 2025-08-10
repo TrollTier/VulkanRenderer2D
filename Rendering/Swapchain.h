@@ -10,7 +10,7 @@
 #include <vector>
 #include "SwapchainElement.h"
 
-class VulkanRessources;
+class VulkanResources;
 
 class Swapchain
 {
@@ -20,7 +20,7 @@ public:
     uint32_t m_width = 0;
     uint32_t m_height = 0;
 
-    Swapchain(std::shared_ptr<VulkanRessources> ressources);
+    Swapchain(std::shared_ptr<VulkanResources> ressources);
     ~Swapchain();
 
     SwapchainElement* getCurrentFrame();
@@ -39,7 +39,7 @@ public:
 
 private:
     std::vector<SwapchainElement> m_swapChainElements;
-    std::shared_ptr<VulkanRessources> m_ressources;
+    std::shared_ptr<VulkanResources> m_ressources;
     size_t m_currentFrame = 0;
 };
 

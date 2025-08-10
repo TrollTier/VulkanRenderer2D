@@ -10,7 +10,7 @@
 #include "Buffer.h"
 #include "ImageLoader.h"
 #include "VulkanHelpers.h"
-#include "VulkanRessources.h"
+#include "VulkanResources.h"
 
 Texture2D::~Texture2D()
 {
@@ -20,7 +20,7 @@ Texture2D::~Texture2D()
 }
 
 Texture2D::Texture2D(
-    std::shared_ptr<VulkanRessources> vulkanRessources,
+    std::shared_ptr<VulkanResources> vulkanRessources,
     const char* imagePath)
 {
     m_vulkanRessources = vulkanRessources;

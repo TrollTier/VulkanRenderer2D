@@ -7,14 +7,14 @@
 
 #include <memory>
 
-#include "VulkanRessources.h"
+#include "VulkanResources.h"
 #include  "vulkan/vulkan.h"
 
 class Buffer
 {
 public:
     Buffer(
-        const std::weak_ptr<VulkanRessources> &resources,
+        const std::weak_ptr<VulkanResources> &resources,
         VkDeviceSize size,
         VkBufferUsageFlags usage,
         VkMemoryPropertyFlags properties);
@@ -30,7 +30,7 @@ public:
     void writeData(const void* data, VkDeviceSize length) const;
 
 private:
-    std::weak_ptr<VulkanRessources> m_resources;
+    std::weak_ptr<VulkanResources> m_resources;
     VkBuffer m_buffer = VK_NULL_HANDLE;
     VkDeviceMemory m_bufferMemory = VK_NULL_HANDLE;
     VkDeviceSize m_bufferSize = 0;

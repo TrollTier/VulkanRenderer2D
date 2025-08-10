@@ -7,7 +7,7 @@
 #include "VulkanHelpers.h"
 
 Buffer::Buffer(
-    const std::weak_ptr<VulkanRessources> &resources,
+    const std::weak_ptr<VulkanResources> &resources,
     const VkDeviceSize size,
     const VkBufferUsageFlags usage,
     const VkMemoryPropertyFlags properties)

@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include "VulkanRessources.h"
+#include "VulkanResources.h"
 
 VkSurfaceFormatKHR findFormat(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
 {
@@ -62,7 +62,7 @@ VkImageView createImageView(
     return imageView;
 }
 
-Swapchain::Swapchain(std::shared_ptr<VulkanRessources> ressources)
+Swapchain::Swapchain(std::shared_ptr<VulkanResources> ressources)
 {
     m_ressources = ressources;
 

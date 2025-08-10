@@ -2,7 +2,7 @@
 // Created by patri on 10.07.2025.
 //
 
-#include "VulkanRessources.h"
+#include "VulkanResources.h"
 
 #include <set>
 #include <stdexcept>
@@ -11,7 +11,7 @@
 
 #include "VulkanWindow.h"
 
-VulkanRessources::~VulkanRessources()
+VulkanResources::~VulkanResources()
 {
     vkDestroyCommandPool(m_logicalDevice, m_commandPool, m_allocator);
     vkDestroySurfaceKHR(m_instance, m_surface, m_allocator);
@@ -19,7 +19,7 @@ VulkanRessources::~VulkanRessources()
     vkDestroyInstance(m_instance, m_allocator);
 }
 
-void VulkanRessources::initialize(
+void VulkanResources::initialize(
     bool enableValidationLayers,
     const std::vector<const char*>& validationLayers,
     const std::vector<const char*>& instanceExtensions)
@@ -48,7 +48,7 @@ void VulkanRessources::initialize(
     }
 }
 
-void VulkanRessources::initializeInstance(
+void VulkanResources::initializeInstance(
     bool enableValidationLayers,
     const std::vector<const char*>& validationLayers,
     const std::vector<const char*>& instanceExtensions)
@@ -90,7 +90,7 @@ inline bool hasLayer(const char* const layerName, const std::vector<VkLayerPrope
     return false;
 }
 
-void VulkanRessources::verifyValidationLayerSupport(const std::vector<const char*> &layerNames)
+void VulkanResources::verifyValidationLayerSupport(const std::vector<const char*> &layerNames)
 {
     uint32_t propertyCount = 0;
     if (vkEnumerateInstanceLayerProperties(&propertyCount, nullptr) != VK_SUCCESS)
@@ -119,7 +119,7 @@ void VulkanRessources::verifyValidationLayerSupport(const std::vector<const char
     }
 }
 
-VkPhysicalDevice VulkanRessources::pickPhysicalDevice()
+VkPhysicalDevice VulkanResources::pickPhysicalDevice()
 {
     uint32_t physicalDeviceCount = 0;
     if (vkEnumeratePhysicalDevices(m_instance, &physicalDeviceCount, nullptr) != VK_SUCCESS)
@@ -174,7 +174,7 @@ VkPhysicalDevice VulkanRessources::pickPhysicalDevice()
     return physicalDevices[0];
 }
 
-void VulkanRessources::initializeLogicalDevice()
+void VulkanResources::initializeLogicalDevice()
 {
     float priorities[1] = { 1.0f };
     VkDeviceQueueCreateInfo queueCreateInfo = {};
@@ -215,7 +215,7 @@ void VulkanRessources::initializeLogicalDevice()
 }
 
 
-uint32_t VulkanRessources::getQueueFamilyIndex(VkQueueFlags queueFlags)
+uint32_t VulkanResources::getQueueFamilyIndex(VkQueueFlags queueFlags)
 {
     uint32_t familyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(m_physicalDevice, &familyCount, nullptr);

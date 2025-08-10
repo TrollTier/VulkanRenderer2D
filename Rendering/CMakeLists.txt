@@ -5,8 +5,8 @@ add_library(Rendering
         Swapchain.h
         Swapchain.cpp
         SwapchainElement.h
-        VulkanRessources.cpp
-        VulkanRessources.h
+        VulkanResources.cpp
+        VulkanResources.h
         VulkanWindow.cpp
         VulkanWindow.h
         Pipeline.cpp

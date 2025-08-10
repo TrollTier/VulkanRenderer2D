@@ -55,7 +55,7 @@ Pipeline::~Pipeline()
 }
 
 Pipeline::Pipeline(
-    std::shared_ptr<VulkanRessources> ressources,
+    std::shared_ptr<VulkanResources> ressources,
     std::string vertexShaderPath,
     std::string fragmentShaderPath,
     size_t swapchainImageCount,

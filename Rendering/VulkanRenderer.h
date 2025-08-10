@@ -9,7 +9,7 @@
 #include "Pipeline.h"
 #include "Swapchain.h"
 #include "Texture2D.h"
-#include "VulkanRessources.h"
+#include "VulkanResources.h"
 #include "../Core/Camera.h"
 #include "../Core/Map.h"
 #include "../Core/Mesh.h"
@@ -19,7 +19,7 @@
 class VulkanRenderer
 {
 public:
-    VulkanRenderer(std::shared_ptr<VulkanRessources> resources, uint32_t pixelsPerUnit);
+    VulkanRenderer(std::shared_ptr<VulkanResources> resources, uint32_t pixelsPerUnit);
     ~VulkanRenderer();
 
     void initialize();
@@ -41,7 +41,7 @@ private:
     uint32_t m_pixelsPerUnit = 1;
     std::vector<VkDescriptorSet> m_defaultDescriptorSets;
 
-    std::shared_ptr<VulkanRessources> m_vulkanRessources;
+    std::shared_ptr<VulkanResources> m_vulkanRessources;
     std::unique_ptr<Swapchain> m_swapchain;
     std::unique_ptr<Pipeline> m_pipeline;
 

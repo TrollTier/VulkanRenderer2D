@@ -11,7 +11,7 @@
 
 #include "VulkanWindow.h"
 
-class VulkanRessources {
+class VulkanResources {
 public:
     VkAllocationCallbacks* m_allocator = nullptr;
 
@@ -24,15 +24,15 @@ public:
     uint32_t m_graphicsQueueFamilyIndex = 0;
     VkCommandPool m_commandPool = VK_NULL_HANDLE;
 
-    explicit VulkanRessources(std::shared_ptr<VulkanWindow> window): m_window(window) {}
-    ~VulkanRessources();
+    explicit VulkanResources(const std::shared_ptr<VulkanWindow>& window): m_window(window) {}
+    ~VulkanResources();
 
     void initialize(
         bool enableValidationLayers,
         const std::vector<const char*>& validationLayers,
         const std::vector<const char*>& instanceExtensions);
 
-    const std::shared_ptr<VulkanWindow> getWindow() const
+    [[nodiscard]] std::shared_ptr<VulkanWindow> getWindow() const
     {
         return m_window;
     }

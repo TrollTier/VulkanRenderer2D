@@ -41,7 +41,7 @@ Game::Game()
         "VK_LAYER_KHRONOS_validation"
     };
 
-    m_vulkanRessources = std::make_shared<VulkanRessources>(m_vulkanWindow);
+    m_vulkanRessources = std::make_shared<VulkanResources>(m_vulkanWindow);
     m_vulkanRessources->initialize(
         true,
         m_validationLayers,
