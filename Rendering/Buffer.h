@@ -34,6 +34,7 @@ private:
     VkBuffer m_buffer = VK_NULL_HANDLE;
     VkDeviceMemory m_bufferMemory = VK_NULL_HANDLE;
     VkDeviceSize m_bufferSize = 0;
+    VkMemoryPropertyFlags m_properties;
 };
 
 #endif //BUFFER_H

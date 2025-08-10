@@ -14,6 +14,7 @@ Buffer::Buffer(
 {
     m_resources = resources;
     m_bufferSize = size;
+    m_properties = properties;
 
     if (const auto ptr = resources.lock())
     {
@@ -39,9 +40,50 @@ Buffer::~Buffer()
 
 void Buffer::writeData(const void *data, VkDeviceSize length) const
 {
-    void* mappedMemory = mapMemory(length);
-    memcpy(mappedMemory, data, length);
-    unmapMemory();
+    if (m_properties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
+    {
+        void* mappedMemory = mapMemory(length);
+        memcpy(mappedMemory, data, length);
+        unmapMemory();
+    }
+    else if (const auto ptr = m_resources.lock())
+    {
+        Buffer stagingBuffer{
+            m_resources,
+            length,
+            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
+
+        stagingBuffer.writeData(data, length);
+
+        VkCommandBufferAllocateInfo allocInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
+        allocInfo.commandPool = ptr->m_commandPool;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandBufferCount = 1;
+
+        VkCommandBuffer cmdBuffer;
+        vkAllocateCommandBuffers(ptr->m_logicalDevice, &allocInfo, &cmdBuffer);
+
+        VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        vkBeginCommandBuffer(cmdBuffer, &beginInfo);
+
+        VkBufferCopy copyRegion{};
+        copyRegion.srcOffset = 0;
+        copyRegion.dstOffset = 0;
+        copyRegion.size = length;
+
+        vkCmdCopyBuffer(cmdBuffer, stagingBuffer.getBuffer(), m_buffer, 1, &copyRegion);
+        vkEndCommandBuffer(cmdBuffer);
+
+        VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &cmdBuffer;
+
+        vkQueueSubmit(ptr->m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+        vkQueueWaitIdle(ptr->m_graphicsQueue);
+    }
 }
 
 void* Buffer::mapMemory(VkDeviceSize length) const

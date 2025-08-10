@@ -40,15 +40,8 @@ VulkanRenderer::~VulkanRenderer()
     m_cameraBuffers.clear();
     m_objectStagingBuffers.clear();
     m_textures.clear();
-
-    for (size_t i = 0; i < m_indexBuffers.size(); i++)
-    {
-        vkFreeMemory(device, m_indexBufferMemories[i], allocator);
-        vkDestroyBuffer(device, m_indexBuffers[i], allocator);
-
-        vkFreeMemory(device, m_vertexBufferMemories[i], allocator);
-        vkDestroyBuffer(device, m_vertexBuffers[i], allocator);
-    }
+    m_vertexBuffers.clear();
+    m_indexBuffers.clear();
 
     vkFreeDescriptorSets(
             device,
@@ -258,29 +251,22 @@ void VulkanRenderer::onMeshCreated(const Mesh& mesh)
 {
     const auto& vertices = mesh.getVertices();
     const auto& indices = mesh.getIndices();
-    const size_t index = mesh.getMeshIndex();
 
-    if (index >= m_indexBuffers.size())
-    {
-        m_indexBuffers.resize(m_indexBuffers.size() * 2, VK_NULL_HANDLE);
-        m_indexBufferMemories.resize(m_indexBufferMemories.size() * 2, VK_NULL_HANDLE);
-        m_vertexBuffers.resize(m_vertexBuffers.size() * 2, VK_NULL_HANDLE);
-        m_vertexBufferMemories.resize(m_vertexBufferMemories.size() * 2, VK_NULL_HANDLE);
-    }
-
-    createBufferWithData(
-        vertices.data(),
+    auto vertexBuffer = std::make_unique<Buffer>(
+        m_vulkanRessources,
         sizeof(vertices[0]) * vertices.size(),
-        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        m_vertexBuffers[index],
-        m_vertexBufferMemories[index]);
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vertexBuffer->writeData(vertices.data(), sizeof(vertices[0]) * vertices.size());
+    m_vertexBuffers.emplace_back(std::move(vertexBuffer));
 
-    createBufferWithData(
-        indices.data(),
+    auto indexBuffer = std::make_unique<Buffer>(
+        m_vulkanRessources,
         sizeof(indices[0]) * indices.size(),
-        VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-        m_indexBuffers[index],
-        m_indexBufferMemories[index]);
+        VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    indexBuffer->writeData(indices.data(), sizeof(indices[0]) * indices.size());
+    m_indexBuffers.emplace_back(std::move(indexBuffer));
 }
 
 void VulkanRenderer::initializeSampler()
@@ -625,10 +611,10 @@ void VulkanRenderer::draw_scene(
     const Mesh& mesh = *m_meshes[0];
 
     const size_t meshIndex = mesh.getMeshIndex();
-    VkBuffer vertexBuffers[] = { m_vertexBuffers[meshIndex] };
+    VkBuffer vertexBuffers[] = { m_vertexBuffers[meshIndex]->getBuffer() };
     VkDeviceSize offsets[] = { 0 };
     vkCmdBindVertexBuffers(currentImageElement->commandBuffer, 0, 1, vertexBuffers, offsets);
-    vkCmdBindIndexBuffer(currentImageElement->commandBuffer, m_indexBuffers[meshIndex], 0, VK_INDEX_TYPE_UINT16);
+    vkCmdBindIndexBuffer(currentImageElement->commandBuffer, m_indexBuffers[meshIndex]->getBuffer(), 0, VK_INDEX_TYPE_UINT16);
 
     vkCmdDrawIndexed(
         currentImageElement->commandBuffer,

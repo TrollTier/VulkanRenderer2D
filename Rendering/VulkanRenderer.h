@@ -47,12 +47,8 @@ private:
     std::vector<std::unique_ptr<Mesh>> m_meshes;
     std::vector<std::unique_ptr<Texture2D>> m_textures;
 
-    std::vector<VkBuffer> m_vertexBuffers {1, VK_NULL_HANDLE};
-    std::vector<VkDeviceMemory> m_vertexBufferMemories {1, VK_NULL_HANDLE};
-
-    std::vector<VkBuffer> m_indexBuffers {1, VK_NULL_HANDLE};
-    std::vector<VkDeviceMemory> m_indexBufferMemories {1, VK_NULL_HANDLE};
-
+    std::vector<std::unique_ptr<Buffer>> m_vertexBuffers{};
+    std::vector<std::unique_ptr<Buffer>> m_indexBuffers{};
     std::vector<std::unique_ptr<Buffer>> m_cameraBuffers{};
 
     std::vector<std::unique_ptr<Buffer>> m_objectStagingBuffers{};
