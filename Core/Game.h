@@ -34,7 +34,6 @@ private:
     std::unique_ptr<Camera> m_camera;
 
     VkDescriptorPool m_imGuiPool = VK_NULL_HANDLE;
-    VkRenderPass m_imGuiPass = VK_NULL_HANDLE;
 
     void initImGui();
 
