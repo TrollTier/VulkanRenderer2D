@@ -18,14 +18,35 @@ Buffer::Buffer(
 
     if (const auto ptr = resources.lock())
     {
-        VulkanHelpers::createBuffer(
-            ptr->m_logicalDevice,
+        VkBufferCreateInfo bufferInfo{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+        bufferInfo.size = size;
+        bufferInfo.usage = usage;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        if (vkCreateBuffer(ptr->m_logicalDevice, &bufferInfo, nullptr, &m_buffer) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to create buffer");
+        }
+
+        VkMemoryRequirements memRequirements;
+        vkGetBufferMemoryRequirements(ptr->m_logicalDevice, m_buffer, &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO };
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = VulkanHelpers::findMemoryType(
             ptr->m_physicalDevice,
-            size,
-            usage,
-            properties,
-            m_buffer,
-            m_bufferMemory);
+            memRequirements.memoryTypeBits,
+            properties);
+
+        if (vkAllocateMemory(ptr->m_logicalDevice, &allocInfo, nullptr, &m_bufferMemory) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to allocate buffer memory");
+        }
+
+        if (vkBindBufferMemory(ptr->m_logicalDevice, m_buffer, m_bufferMemory, 0) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to bind buffer memory");
+        }
     }
 }
 
@@ -111,7 +132,7 @@ void* Buffer::mapMemory(VkDeviceSize length) const
         }
     }
 
-    return std::move(mappedMemory);
+    return mappedMemory;
 }
 
 void Buffer::unmapMemory() const
