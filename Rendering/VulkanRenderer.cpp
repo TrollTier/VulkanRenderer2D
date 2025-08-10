@@ -251,6 +251,13 @@ void VulkanRenderer::onMeshCreated(const Mesh& mesh)
 {
     const auto& vertices = mesh.getVertices();
     const auto& indices = mesh.getIndices();
+    const size_t index = mesh.getMeshIndex();
+
+    if (index > m_vertexBuffers.size())
+    {
+        m_vertexBuffers.resize(m_vertexBuffers.size() * 2);
+        m_indexBuffers.resize(m_indexBuffers.size() * 2);
+    }
 
     auto vertexBuffer = std::make_unique<Buffer>(
         m_vulkanRessources,
@@ -258,7 +265,7 @@ void VulkanRenderer::onMeshCreated(const Mesh& mesh)
         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     vertexBuffer->writeData(vertices.data(), sizeof(vertices[0]) * vertices.size());
-    m_vertexBuffers.emplace_back(std::move(vertexBuffer));
+    m_vertexBuffers[index] = std::move(vertexBuffer);
 
     auto indexBuffer = std::make_unique<Buffer>(
         m_vulkanRessources,
@@ -266,7 +273,7 @@ void VulkanRenderer::onMeshCreated(const Mesh& mesh)
         VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     indexBuffer->writeData(indices.data(), sizeof(indices[0]) * indices.size());
-    m_indexBuffers.emplace_back(std::move(indexBuffer));
+    m_indexBuffers[index] = std::move(indexBuffer);
 }
 
 void VulkanRenderer::initializeSampler()

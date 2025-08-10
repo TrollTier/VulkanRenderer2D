@@ -47,8 +47,8 @@ private:
     std::vector<std::unique_ptr<Mesh>> m_meshes;
     std::vector<std::unique_ptr<Texture2D>> m_textures;
 
-    std::vector<std::unique_ptr<Buffer>> m_vertexBuffers{};
-    std::vector<std::unique_ptr<Buffer>> m_indexBuffers{};
+    std::vector<std::unique_ptr<Buffer>> m_vertexBuffers{1};
+    std::vector<std::unique_ptr<Buffer>> m_indexBuffers{1};
     std::vector<std::unique_ptr<Buffer>> m_cameraBuffers{};
 
     std::vector<std::unique_ptr<Buffer>> m_objectStagingBuffers{};
