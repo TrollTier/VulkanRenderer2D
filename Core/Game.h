@@ -33,6 +33,8 @@ private:
     std::vector<size_t> m_textureIndices;
     std::unique_ptr<Camera> m_camera;
 
+    void initImGui();
+
     void handleKeyInput(const Timestep& timestep);
     static void glfwMouseButtonHandler(GLFWwindow* window, int button, int action, int mods);
 };

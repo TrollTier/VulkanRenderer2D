@@ -19,6 +19,9 @@
 #include "InstanceData.h"
 #include "../Core/Camera.h"
 
+#include "../include/imgui/imgui.h"
+#include "../include/imgui/backends/imgui_impl_vulkan.h"
+
 VulkanRenderer::VulkanRenderer(std::shared_ptr<VulkanRessources> resources, uint32_t pixelsPerUnit)
 {
     m_vulkanRessources = resources;
@@ -489,7 +492,8 @@ uint32_t VulkanRenderer::updateObjectsBuffer(
 void VulkanRenderer::draw_scene(
     const Camera& camera,
     const Map& map,
-    const World& world)
+    const World& world,
+    ImDrawData* uiData)
 {
     const auto currentFrameElement = m_swapchain->getCurrentFrame();
 
@@ -633,6 +637,8 @@ void VulkanRenderer::draw_scene(
         0,
         0,
         0);
+
+    ImGui_ImplVulkan_RenderDrawData(uiData, currentImageElement->commandBuffer);
 
     vkCmdEndRendering(currentImageElement->commandBuffer);
 

@@ -14,6 +14,7 @@
 #include "../Core/Map.h"
 #include "../Core/Mesh.h"
 #include "../Core/World.h"
+#include "../include/imgui/imgui.h"
 
 class VulkanRenderer
 {
@@ -27,7 +28,13 @@ public:
     void draw_scene(
         const Camera& camera,
         const Map& map,
-        const World& world);
+        const World& world,
+        ImDrawData* uiData);
+
+    [[nodiscard]] const Swapchain& getSwapchain() const
+    {
+        return *m_swapchain;
+    }
 
 private:
     uint32_t m_pixelsPerUnit = 1;

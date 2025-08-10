@@ -11,6 +11,9 @@
 #include <iostream>
 #include <random>
 #include <thread>
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_vulkan.h>
 
 #include "Timestep.h"
 #include "../Rendering/VulkanRenderer.h"
@@ -47,6 +50,8 @@ Game::Game()
     m_renderer = std::make_unique<VulkanRenderer>(m_vulkanRessources, PIXELS_PER_UNIT);
     m_renderer->initialize();
 
+	initImGui();
+
     m_textureIndices.push_back(m_renderer->loadTexture("../Assets/default_texture.jpg"));
     m_textureIndices.push_back(m_renderer->loadTexture("../Assets/texture.jpg"));
     m_textureIndices.push_back(m_renderer->loadTexture("../Assets/Flame.png"));
@@ -72,6 +77,109 @@ Game::Game()
         windowExtent.height);
 
     glfwSetMouseButtonCallback(m_window, Game::glfwMouseButtonHandler);
+}
+
+void Game::initImGui()
+{
+    VkDescriptorPoolSize poolSizes[] =
+	{
+		{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+	};
+
+	VkDescriptorPoolCreateInfo pool_info = {};
+	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+	pool_info.maxSets = 1000;
+	pool_info.poolSizeCount = std::size(poolSizes);
+	pool_info.pPoolSizes = poolSizes;
+
+	VkDescriptorPool imguiPool;
+	if (vkCreateDescriptorPool(m_vulkanRessources->m_logicalDevice, &pool_info, nullptr, &imguiPool) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create descriptor pool for ImGui");
+	}
+
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+	// Setup Dear ImGui style
+	ImGui::StyleColorsDark();
+	//ImGui::StyleColorsLight();
+
+	VkAttachmentDescription colorAttachment{};
+    colorAttachment.format = m_renderer->getSwapchain().m_format.format;
+    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;   // Keep what we rendered before
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    // Reference to color attachment from subpass
+    VkAttachmentReference colorAttachmentRef{};
+    colorAttachmentRef.attachment = 0;
+    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    // Single subpass
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &colorAttachmentRef;
+
+    // Subpass dependencies (to handle layout transitions and ensure proper execution order)
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+    // Create render pass
+    VkRenderPassCreateInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = 1;
+    renderPassInfo.pAttachments = &colorAttachment;
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &dependency;
+
+    VkRenderPass renderPass;
+    if (vkCreateRenderPass(m_vulkanRessources->m_logicalDevice, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create ImGui render pass!");
+    }
+
+	// Setup Platform/Renderer backends
+	ImGui_ImplGlfw_InitForVulkan(m_window, true);
+	ImGui_ImplVulkan_InitInfo init_info = {};
+	init_info.ApiVersion = VK_API_VERSION_1_3;              // Pass in your value of VkApplicationInfo::apiVersion, otherwise will default to header version.
+	init_info.Instance = m_vulkanRessources->m_instance;
+	init_info.PhysicalDevice = m_vulkanRessources->m_physicalDevice;
+	init_info.Device = m_vulkanRessources->m_logicalDevice;
+	init_info.QueueFamily = m_vulkanRessources->m_graphicsQueueFamilyIndex;
+	init_info.Queue = m_vulkanRessources->m_graphicsQueue;
+	init_info.DescriptorPool = imguiPool;
+	init_info.Subpass = 0;
+	init_info.MinImageCount = 2;// TODO get from swapchain
+	init_info.ImageCount = 2; // TODO get from swapchain
+	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+	init_info.RenderPass = renderPass;
+	ImGui_ImplVulkan_Init(&init_info);
 }
 
 void Game::RunLoop()
@@ -100,7 +208,18 @@ void Game::RunLoop()
 
         const auto startOfRender = std::chrono::high_resolution_clock::now();
 
-        m_renderer->draw_scene(*m_camera, *m_map, *m_world);
+        ImGui_ImplVulkan_NewFrame();
+    	ImGui_ImplGlfw_NewFrame();
+    	ImGui::NewFrame();
+
+    	ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+    	ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+    	ImGui::End();
+
+    	ImGui::Render();
+    	ImDrawData* uiData = ImGui::GetDrawData();
+
+    	m_renderer->draw_scene(*m_camera, *m_map, *m_world, uiData);
 
         const auto endOfRender = std::chrono::high_resolution_clock::now();
 
@@ -111,6 +230,8 @@ void Game::RunLoop()
         std::cout << "Frame:" << std::chrono::duration_cast<std::chrono::milliseconds>(frameDuration).count() << std::endl;
         std::cout << "Render:" << std::chrono::duration_cast<std::chrono::milliseconds>(renderDuration).count() << std::endl;
     }
+
+	ImGui_ImplVulkan_Shutdown();
 }
 
 void Game::mouseButtonCallback(int button, int action, int mods)

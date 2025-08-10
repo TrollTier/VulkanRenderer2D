@@ -20,4 +20,4 @@ add_library(Rendering
         Buffer.h
 )
 
-target_link_libraries(Rendering PRIVATE Vulkan::Vulkan glfw)
+target_link_libraries(Rendering PRIVATE Vulkan::Vulkan glfw ImGui)
