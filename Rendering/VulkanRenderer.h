@@ -61,14 +61,6 @@ private:
     void initializeDefaultMeshes();
     void onMeshCreated(const Mesh& mesh);
 
-    void createBufferWithData(
-        const void* srcData,
-        VkDeviceSize size,
-        VkBufferUsageFlags usage,
-        VkBuffer& dstBuffer,
-        VkDeviceMemory& dstBufferMemory
-    );
-
     void updateCamera(const Camera& camera, size_t imageIndex);
     uint32_t updateObjectsBuffer(
         VkCommandBuffer commandBuffer,
