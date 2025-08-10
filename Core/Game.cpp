@@ -103,8 +103,7 @@ void Game::initImGui()
 	pool_info.poolSizeCount = std::size(poolSizes);
 	pool_info.pPoolSizes = poolSizes;
 
-	VkDescriptorPool imguiPool;
-	if (vkCreateDescriptorPool(m_vulkanRessources->m_logicalDevice, &pool_info, nullptr, &imguiPool) != VK_SUCCESS)
+	if (vkCreateDescriptorPool(m_vulkanRessources->m_logicalDevice, &pool_info, nullptr, &m_imGuiPool) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create descriptor pool for ImGui");
 	}
@@ -159,8 +158,7 @@ void Game::initImGui()
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
 
-    VkRenderPass renderPass;
-    if (vkCreateRenderPass(m_vulkanRessources->m_logicalDevice, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+    if (vkCreateRenderPass(m_vulkanRessources->m_logicalDevice, &renderPassInfo, nullptr, &m_imGuiPass) != VK_SUCCESS) {
         throw std::runtime_error("failed to create ImGui render pass!");
     }
 
@@ -173,12 +171,12 @@ void Game::initImGui()
 	init_info.Device = m_vulkanRessources->m_logicalDevice;
 	init_info.QueueFamily = m_vulkanRessources->m_graphicsQueueFamilyIndex;
 	init_info.Queue = m_vulkanRessources->m_graphicsQueue;
-	init_info.DescriptorPool = imguiPool;
+	init_info.DescriptorPool = m_imGuiPool;
 	init_info.Subpass = 0;
 	init_info.MinImageCount = 2;// TODO get from swapchain
 	init_info.ImageCount = 2; // TODO get from swapchain
 	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-	init_info.RenderPass = renderPass;
+	init_info.RenderPass = m_imGuiPass;
 	ImGui_ImplVulkan_Init(&init_info);
 }
 
@@ -231,7 +229,10 @@ void Game::RunLoop()
         std::cout << "Render:" << std::chrono::duration_cast<std::chrono::milliseconds>(renderDuration).count() << std::endl;
     }
 
+	vkDeviceWaitIdle(m_vulkanRessources->m_logicalDevice);
 	ImGui_ImplVulkan_Shutdown();
+	vkDestroyRenderPass(m_vulkanRessources->m_logicalDevice, m_imGuiPass, nullptr);
+	vkDestroyDescriptorPool(m_vulkanRessources->m_logicalDevice, m_imGuiPool, nullptr);
 }
 
 void Game::mouseButtonCallback(int button, int action, int mods)
