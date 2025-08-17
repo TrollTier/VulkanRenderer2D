@@ -9,10 +9,10 @@
 #include <vulkan/vulkan.h>
 #include <glm/glm.hpp>
 
-struct Vertex {
+typedef struct {
     glm::vec3 pos;
     glm::vec3 color;
     glm::vec2 texCoord;
-};
+} Vertex;
 
 #endif //VERTEX_H

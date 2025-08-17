@@ -52,10 +52,11 @@ Game::Game()
 
 	initImGui();
 
-    m_textureIndices.push_back(m_renderer->loadTexture("../Assets/default_texture.jpg"));
-    m_textureIndices.push_back(m_renderer->loadTexture("../Assets/texture.jpg"));
-    m_textureIndices.push_back(m_renderer->loadTexture("../Assets/Flame.png"));
-    m_textureIndices.push_back(m_renderer->loadTexture("../Assets/wood_1.png"));
+    m_textureIndices.push_back(m_renderer->loadTexture("../Assets/Textures/default_texture.jpg"));
+    m_textureIndices.push_back(m_renderer->loadTexture("../Assets/Textures/texture.jpg"));
+    m_textureIndices.push_back(m_renderer->loadTexture("../Assets/Textures/Flame.png"));
+    m_textureIndices.push_back(m_renderer->loadTexture("../Assets/Textures/wood_1.png"));
+	m_textureIndices.push_back(m_renderer->loadTexture("../Assets/Textures/gaius.png"));
 
     m_world = std::make_unique<World>();
     m_map = std::make_unique<Map>(50, 50, 1);
@@ -175,8 +176,8 @@ void Game::RunLoop()
     	ImGui_ImplGlfw_NewFrame();
     	ImGui::NewFrame();
 
-    	ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-    	ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+    	ImGui::Begin("Stats");
+    	ImGui::Text("This is some useful text.");
     	ImGui::End();
 
     	ImGui::Render();

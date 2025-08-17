@@ -14,7 +14,7 @@
 class Texture2D
 {
 public:
-    Texture2D(std::shared_ptr<VulkanResources> vulkanRessources, const char* imagePath);
+    Texture2D(std::weak_ptr<VulkanResources> vulkanRessources, const char* imagePath);
     ~Texture2D();
 
     [[nodiscard]] VkImageView getImageView() const
@@ -23,7 +23,7 @@ public:
     }
 
 private:
-    std::shared_ptr<VulkanResources> m_vulkanRessources;
+    std::weak_ptr<VulkanResources> m_vulkanRessources;
     VkImage m_textureImage = VK_NULL_HANDLE;
     VkImageView m_textureImageView = VK_NULL_HANDLE;
     VkDeviceMemory m_textureImageMemory = VK_NULL_HANDLE;

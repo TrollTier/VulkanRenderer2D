@@ -351,15 +351,15 @@ uint32_t VulkanRenderer::updateObjectsBuffer(
 
     for (auto tile : tiles)
     {
-        if ((tile.column + 1) < frustum.x || tile.column > frustum.toX ||
-            (tile.row + 1) < frustum.y || tile.row > frustum.toY)
+        if (static_cast<float>(tile.column + 1) < frustum.x || static_cast<float>(tile.column) > frustum.toX ||
+            static_cast<float>(tile.row + 1) < frustum.y || static_cast<float>(tile.row) > frustum.toY)
         {
             continue;
         }
 
         const glm::vec3 screenPosition = glm::vec3(
-            (tile.column - offsetX) * m_pixelsPerUnit,
-            (tile.row - offsetY) * m_pixelsPerUnit,
+            (static_cast<float>(tile.column) - offsetX) * static_cast<float>(m_pixelsPerUnit),
+            (static_cast<float>(tile.row) - offsetY) * static_cast<float>(m_pixelsPerUnit),
             0);
 
         objectSSBO[objectsToDraw].modelMatrix =

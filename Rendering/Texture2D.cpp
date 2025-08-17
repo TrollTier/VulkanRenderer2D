@@ -14,16 +14,23 @@
 
 Texture2D::~Texture2D()
 {
-    vkDestroyImageView(m_vulkanRessources->m_logicalDevice, m_textureImageView, m_vulkanRessources->m_allocator);
-    vkDestroyImage(m_vulkanRessources->m_logicalDevice, m_textureImage, m_vulkanRessources->m_allocator);
-    vkFreeMemory(m_vulkanRessources->m_logicalDevice, m_textureImageMemory, m_vulkanRessources->m_allocator);
+    if (m_vulkanRessources.expired())
+    {
+        return;
+    }
+
+    const auto resources = m_vulkanRessources.lock();
+
+    vkDestroyImageView(resources->m_logicalDevice, m_textureImageView, resources->m_allocator);
+    vkDestroyImage(resources->m_logicalDevice, m_textureImage, resources->m_allocator);
+    vkFreeMemory(resources->m_logicalDevice, m_textureImageMemory, resources->m_allocator);
 }
 
 Texture2D::Texture2D(
-    std::shared_ptr<VulkanResources> vulkanRessources,
+    std::weak_ptr<VulkanResources> vulkanRessources,
     const char* imagePath)
 {
-    m_vulkanRessources = vulkanRessources;
+    m_vulkanRessources = std::move(vulkanRessources);
 
     const ImageInfo imageInfo = ImageLoader::loadImage(imagePath);
     VkDeviceSize imageSize = imageInfo.width * imageInfo.height * 4;
@@ -79,7 +86,14 @@ Texture2D::Texture2D(
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = 1;
 
-    if (vkCreateImageView(m_vulkanRessources->m_logicalDevice, &viewInfo, m_vulkanRessources->m_allocator, &m_textureImageView) != VK_SUCCESS) {
+    if (m_vulkanRessources.expired())
+    {
+        return;
+    }
+
+    const auto resources = m_vulkanRessources.lock();
+
+    if (vkCreateImageView(resources->m_logicalDevice, &viewInfo, resources->m_allocator, &m_textureImageView) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create texture image view!");
     }
 }
@@ -94,6 +108,13 @@ void Texture2D::createImage(
     VkImage &image,
     VkDeviceMemory &imageMemory)
 {
+    if (m_vulkanRessources.expired())
+    {
+        return;
+    }
+
+    const auto resources = m_vulkanRessources.lock();
+
     VkImageCreateInfo imageInfo{ VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
     imageInfo.extent.width = width;
@@ -109,26 +130,26 @@ void Texture2D::createImage(
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.flags = 0;
 
-    if (vkCreateImage(m_vulkanRessources->m_logicalDevice, &imageInfo, nullptr, &image) != VK_SUCCESS) {
+    if (vkCreateImage(resources->m_logicalDevice, &imageInfo, nullptr, &image) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create image!");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(m_vulkanRessources->m_logicalDevice, image, &memRequirements);
+    vkGetImageMemoryRequirements(resources->m_logicalDevice, image, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO };
     allocInfo.allocationSize = memRequirements.size;
     allocInfo.memoryTypeIndex = VulkanHelpers::findMemoryType(
-        m_vulkanRessources->m_physicalDevice,
+        resources->m_physicalDevice,
         memRequirements.memoryTypeBits,
         properties
     );
 
-    if (vkAllocateMemory(m_vulkanRessources->m_logicalDevice, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+    if (vkAllocateMemory(resources->m_logicalDevice, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
         throw std::runtime_error("Failed to allocate image memory!");
     }
 
-    vkBindImageMemory(m_vulkanRessources->m_logicalDevice, image, imageMemory, 0);
+    vkBindImageMemory(resources->m_logicalDevice, image, imageMemory, 0);
 }
 
 void Texture2D::transitionImageLayout(
@@ -137,9 +158,16 @@ void Texture2D::transitionImageLayout(
     VkImageLayout oldLayout,
     VkImageLayout newLayout)
 {
-    const VkCommandPool commandPool = m_vulkanRessources->m_commandPool;
-    const VkQueue graphicsQueue = m_vulkanRessources->m_graphicsQueue;
-    const VkDevice device = m_vulkanRessources->m_logicalDevice;
+    if (m_vulkanRessources.expired())
+    {
+        return;
+    }
+
+    const auto resources = m_vulkanRessources.lock();
+
+    VkCommandPool commandPool = resources->m_commandPool;
+    VkQueue graphicsQueue = resources->m_graphicsQueue;
+    VkDevice device = resources->m_logicalDevice;
 
     VkCommandBufferAllocateInfo allocInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
     allocInfo.commandPool = commandPool;
@@ -219,9 +247,16 @@ void Texture2D::copyBufferToImage(
     uint32_t width,
     uint32_t height)
 {
-    const VkCommandPool commandPool = m_vulkanRessources->m_commandPool;
-    const VkQueue graphicsQueue = m_vulkanRessources->m_graphicsQueue;
-    const VkDevice device = m_vulkanRessources->m_logicalDevice;
+    if (m_vulkanRessources.expired())
+    {
+        return;
+    }
+
+    const auto resources = m_vulkanRessources.lock();
+
+    VkCommandPool commandPool = resources->m_commandPool;
+    VkQueue graphicsQueue = resources->m_graphicsQueue;
+    VkDevice device = resources->m_logicalDevice;
 
     VkCommandBufferAllocateInfo allocInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
     allocInfo.commandPool = commandPool;

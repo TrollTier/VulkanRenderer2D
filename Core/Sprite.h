@@ -7,6 +7,8 @@
 
 #include <cstddef>
 
+#include "SpriteFrame.h"
+
 typedef struct
 {
     size_t textureIndex{0};
