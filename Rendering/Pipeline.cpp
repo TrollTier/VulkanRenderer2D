@@ -90,7 +90,7 @@ Pipeline::Pipeline(
     binding.stride = sizeof(Vertex);
     binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-    std::array<VkVertexInputAttributeDescription, 3> attributes{};
+    std::array<VkVertexInputAttributeDescription, 2> attributes{};
     attributes[0].binding = 0;
     attributes[0].location = 0;
     attributes[0].format = VK_FORMAT_R32G32B32_SFLOAT;
@@ -98,13 +98,8 @@ Pipeline::Pipeline(
 
     attributes[1].binding = 0;
     attributes[1].location = 1;
-    attributes[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attributes[1].offset = offsetof(Vertex, color);
-
-    attributes[2].binding = 0;
-    attributes[2].location = 2;
-    attributes[2].format = VK_FORMAT_R32G32_SFLOAT;
-    attributes[2].offset = offsetof(Vertex, texCoord);
+    attributes[1].format = VK_FORMAT_R32G32_SFLOAT;
+    attributes[1].offset = offsetof(Vertex, texCoord);
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
     vertexInputInfo.vertexBindingDescriptionCount = 1;
