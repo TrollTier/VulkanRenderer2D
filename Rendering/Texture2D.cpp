@@ -14,12 +14,12 @@
 
 Texture2D::~Texture2D()
 {
-    if (m_vulkanRessources.expired())
+    if (m_vulkanResources.expired())
     {
         return;
     }
 
-    const auto resources = m_vulkanRessources.lock();
+    const auto resources = m_vulkanResources.lock();
 
     vkDestroyImageView(resources->m_logicalDevice, m_textureImageView, resources->m_allocator);
     vkDestroyImage(resources->m_logicalDevice, m_textureImage, resources->m_allocator);
@@ -27,12 +27,13 @@ Texture2D::~Texture2D()
 }
 
 Texture2D::Texture2D(
-    std::weak_ptr<VulkanResources> vulkanRessources,
-    const char* imagePath)
+    std::weak_ptr<VulkanResources> vulkanResources,
+    const std::filesystem::path& assetsBasePath,
+    const AtlasEntry& spriteInfo)
 {
-    m_vulkanRessources = std::move(vulkanRessources);
+    m_vulkanResources = std::move(vulkanResources);
 
-    const ImageInfo imageInfo = ImageLoader::loadImage(imagePath);
+    const ImageInfo imageInfo = ImageLoader::loadImage(assetsBasePath / spriteInfo.filePath);
     VkDeviceSize imageSize = imageInfo.width * imageInfo.height * 4;
 
     createImage(
@@ -49,13 +50,12 @@ Texture2D::Texture2D(
     m_textureWidth = static_cast<uint32_t>(imageInfo.width);
 
     Buffer stagingBuffer(
-        m_vulkanRessources,
+        m_vulkanResources,
         imageSize,
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     stagingBuffer.writeData(imageInfo.data, imageSize);
-
     stbi_image_free(imageInfo.data);
 
     transitionImageLayout(
@@ -86,12 +86,12 @@ Texture2D::Texture2D(
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = 1;
 
-    if (m_vulkanRessources.expired())
+    if (m_vulkanResources.expired())
     {
         return;
     }
 
-    const auto resources = m_vulkanRessources.lock();
+    const auto resources = m_vulkanResources.lock();
 
     if (vkCreateImageView(resources->m_logicalDevice, &viewInfo, resources->m_allocator, &m_textureImageView) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create texture image view!");
@@ -108,12 +108,12 @@ void Texture2D::createImage(
     VkImage &image,
     VkDeviceMemory &imageMemory)
 {
-    if (m_vulkanRessources.expired())
+    if (m_vulkanResources.expired())
     {
         return;
     }
 
-    const auto resources = m_vulkanRessources.lock();
+    const auto resources = m_vulkanResources.lock();
 
     VkImageCreateInfo imageInfo{ VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -158,12 +158,12 @@ void Texture2D::transitionImageLayout(
     VkImageLayout oldLayout,
     VkImageLayout newLayout)
 {
-    if (m_vulkanRessources.expired())
+    if (m_vulkanResources.expired())
     {
         return;
     }
 
-    const auto resources = m_vulkanRessources.lock();
+    const auto resources = m_vulkanResources.lock();
 
     VkCommandPool commandPool = resources->m_commandPool;
     VkQueue graphicsQueue = resources->m_graphicsQueue;
@@ -247,12 +247,12 @@ void Texture2D::copyBufferToImage(
     uint32_t width,
     uint32_t height)
 {
-    if (m_vulkanRessources.expired())
+    if (m_vulkanResources.expired())
     {
         return;
     }
 
-    const auto resources = m_vulkanRessources.lock();
+    const auto resources = m_vulkanResources.lock();
 
     VkCommandPool commandPool = resources->m_commandPool;
     VkQueue graphicsQueue = resources->m_graphicsQueue;

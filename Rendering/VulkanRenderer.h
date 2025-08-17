@@ -1,6 +1,8 @@
 #ifndef VULKANRENDERER_H
 #define VULKANRENDERER_H
 
+#include <filesystem>
+
 #include "vulkan/vulkan.h"
 #include <GLFW/glfw3.h>
 #include <vector>
@@ -15,20 +17,25 @@
 #include "../Core/Mesh.h"
 #include "../Core/World.h"
 #include "../include/imgui/imgui.h"
+#include "../Core/TextureAtlasParser.h"
 
 class VulkanRenderer
 {
 public:
-    VulkanRenderer(std::shared_ptr<VulkanResources> resources, uint32_t pixelsPerUnit);
+    VulkanRenderer(
+        std::filesystem::path assetsBasePath,
+        std::shared_ptr<VulkanResources> resources,
+        uint32_t pixelsPerUnit);
     ~VulkanRenderer();
 
     void initialize();
-    size_t loadTexture(const char* texturePath);
+    size_t loadTexture(const AtlasEntry& spriteInfo);
 
     void draw_scene(
         const Camera& camera,
         const Map& map,
         const World& world,
+        const std::vector<AtlasEntry>& atlasEntries,
         ImDrawData* uiData);
 
     [[nodiscard]] const Swapchain& getSwapchain() const
@@ -39,6 +46,7 @@ public:
 
 private:
     uint32_t m_pixelsPerUnit = 1;
+    std::filesystem::path m_assetsBasePath;
     std::vector<VkDescriptorSet> m_defaultDescriptorSets;
 
     std::shared_ptr<VulkanResources> m_vulkanRessources;
@@ -68,7 +76,8 @@ private:
         size_t imageIndex,
         const Camera& camera,
         const Map& map,
-        const World& world);
+        const World& world,
+        const std::vector<AtlasEntry>& atlasEntries);
 
     static void imageToAttachmentLayout(SwapchainElement* element);
     static void imageToPresentLayout(SwapchainElement* element);

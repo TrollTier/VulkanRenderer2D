@@ -12,6 +12,7 @@
 typedef struct
 {
     size_t textureIndex{0};
+    mutable uint16_t currentFrame{0};
 } Sprite;
 
 #endif //SPRITE_H

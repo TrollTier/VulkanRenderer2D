@@ -22,8 +22,12 @@
 #include "../include/imgui/imgui.h"
 #include "../include/imgui/backends/imgui_impl_vulkan.h"
 
-VulkanRenderer::VulkanRenderer(std::shared_ptr<VulkanResources> resources, uint32_t pixelsPerUnit)
+VulkanRenderer::VulkanRenderer(
+    std::filesystem::path assetsBasePath,
+    std::shared_ptr<VulkanResources> resources,
+    uint32_t pixelsPerUnit)
 {
+    m_assetsBasePath = assetsBasePath;
     m_vulkanRessources = resources;
     m_pixelsPerUnit = pixelsPerUnit;
 }
@@ -160,9 +164,9 @@ void VulkanRenderer::initializeDefaultMeshes()
     onMeshCreated(*m_meshes[m_meshes.size() - 1]);
 }
 
-size_t VulkanRenderer::loadTexture(const char *texturePath)
+size_t VulkanRenderer::loadTexture(const AtlasEntry& spriteInfo)
 {
-    m_textures.emplace_back(std::make_unique<Texture2D>(m_vulkanRessources, texturePath));
+    m_textures.emplace_back(std::make_unique<Texture2D>(m_vulkanRessources, m_assetsBasePath, spriteInfo));
 
     const size_t imageCount =  m_swapchain->getImageCount();
 
@@ -325,7 +329,8 @@ uint32_t VulkanRenderer::updateObjectsBuffer(
     size_t imageIndex,
     const Camera& camera,
     const Map& map,
-    const World& world)
+    const World& world,
+    const std::vector<AtlasEntry>& atlasEntries)
 {
     VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -357,6 +362,16 @@ uint32_t VulkanRenderer::updateObjectsBuffer(
             continue;
         }
 
+        const auto& spriteFrame = atlasEntries[tile.sprite.textureIndex].frames[tile.sprite.currentFrame];
+        const auto& texture = *m_textures[tile.sprite.textureIndex];
+
+        const float u0 = static_cast<float>(spriteFrame.x) / static_cast<float>(texture.getWidth());
+        const float v0 = static_cast<float>(spriteFrame.y) / static_cast<float>(texture.getHeight());
+        const float u1 = static_cast<float>(spriteFrame.x + spriteFrame.width) / static_cast<float>(texture.getWidth());
+        const float v1 = static_cast<float>(spriteFrame.y + spriteFrame.height) / static_cast<float>(texture.getHeight());
+
+        ImageRect gpuFrame { u0, v0, u1 - u0, v1 - v0 };
+
         const glm::vec3 screenPosition = glm::vec3(
             (static_cast<float>(tile.column) - offsetX) * static_cast<float>(m_pixelsPerUnit),
             (static_cast<float>(tile.row) - offsetY) * static_cast<float>(m_pixelsPerUnit),
@@ -365,6 +380,7 @@ uint32_t VulkanRenderer::updateObjectsBuffer(
         objectSSBO[objectsToDraw].modelMatrix =
             glm::translate(glm::mat4(1.0f), screenPosition) *
             glm::scale(glm::mat4(1), glm::vec3(m_pixelsPerUnit, m_pixelsPerUnit, 1.0f));
+        objectSSBO[objectsToDraw].spriteFrame = gpuFrame;
         objectSSBO[objectsToDraw].textureIndex = tile.sprite.textureIndex;
 
         objectsToDraw++;
@@ -414,6 +430,7 @@ void VulkanRenderer::draw_scene(
     const Camera& camera,
     const Map& map,
     const World& world,
+    const std::vector<AtlasEntry>& atlasEntries,
     ImDrawData* uiData)
 {
     const auto currentFrameElement = m_swapchain->getCurrentFrame();
@@ -473,7 +490,8 @@ void VulkanRenderer::draw_scene(
         imageIndex,
         camera,
         map,
-        world);
+        world,
+        atlasEntries);
 
     VkCommandBufferBeginInfo beginInfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;

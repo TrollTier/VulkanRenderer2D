@@ -10,11 +10,16 @@
 
 #include "Buffer.h"
 #include "VulkanResources.h"
+#include "../Core/TextureAtlasParser.h"
+#include <filesystem>
 
 class Texture2D
 {
 public:
-    Texture2D(std::weak_ptr<VulkanResources> vulkanRessources, const char* imagePath);
+    Texture2D(
+        std::weak_ptr<VulkanResources> vulkanResources,
+        const std::filesystem::path& assetsBasePath,
+        const AtlasEntry& spriteInfo);
     ~Texture2D();
 
     [[nodiscard]] VkImageView getImageView() const
@@ -22,8 +27,11 @@ public:
         return m_textureImageView;
     }
 
+    [[nodiscard]] uint32_t getWidth() const { return m_textureWidth;}
+    [[nodiscard]] uint32_t getHeight() const { return m_textureHeight;}
+
 private:
-    std::weak_ptr<VulkanResources> m_vulkanRessources;
+    std::weak_ptr<VulkanResources> m_vulkanResources;
     VkImage m_textureImage = VK_NULL_HANDLE;
     VkImageView m_textureImageView = VK_NULL_HANDLE;
     VkDeviceMemory m_textureImageMemory = VK_NULL_HANDLE;

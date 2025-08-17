@@ -1,0 +1,7 @@
+# Format of this file: texture name;number of frames;x1;y1;width1;height1;x2;y2;width2;height2;....
+Textures/default_texture.jpg;1;0;0;0;256;256
+Textures/Flame.png;1;0;0;0;1024;1024
+Textures/texture.jpg;1;0;0;0;960;720
+Textures/wood_1.png;1;0;0;0;1024;1024
+Textures/gaius.png;3;0;30;21;160;160;1;180;21;164;160;2;240;21;164;160
+Textures/spritesheet.png;4;0;0;0;128;128;1;128;0;128;128;2;0;128;128;128;3;128;128;128;128

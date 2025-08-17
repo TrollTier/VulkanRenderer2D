@@ -16,7 +16,7 @@
 class Game
 {
 public:
-    const uint32_t PIXELS_PER_UNIT = 64;
+    const uint32_t PIXELS_PER_UNIT = 256;
 
     Game();
 
@@ -24,6 +24,8 @@ public:
     void mouseButtonCallback(int button, int action, int mods);
 
 private:
+    std::vector<AtlasEntry> m_atlasEntries;
+
     GLFWwindow* m_window;
     std::shared_ptr<VulkanWindow> m_vulkanWindow;
     std::shared_ptr<VulkanResources> m_vulkanRessources;

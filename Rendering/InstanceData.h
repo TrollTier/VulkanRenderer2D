@@ -7,12 +7,19 @@
 
 #include <glm/glm.hpp>
 
+typedef struct
+{
+    float translateX;
+    float translateY;
+    float scaleX;
+    float scaleY;
+} ImageRect;
+
 struct InstanceData {
-    glm::mat4 modelMatrix;
-    uint32_t textureIndex;
-    uint32_t padding1;
-    uint32_t padding2;
-    uint32_t padding3;
+    glm::mat4 modelMatrix;  // 64 bytes  64
+    ImageRect spriteFrame;  // 16 bytes  80
+    uint32_t textureIndex;  //  4 bytes  84
+    uint32_t _pad[3];       // 12 bytes  96
 };
 
 #endif //UNIFORMBUFFEROBJECT_H

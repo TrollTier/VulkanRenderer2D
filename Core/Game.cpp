@@ -15,6 +15,7 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
 
+#include "TextureAtlasParser.h"
 #include "Timestep.h"
 #include "../Rendering/VulkanRenderer.h"
 
@@ -47,16 +48,22 @@ Game::Game()
         m_validationLayers,
         instanceExtensions);
 
-    m_renderer = std::make_unique<VulkanRenderer>(m_vulkanRessources, PIXELS_PER_UNIT);
+	const std::filesystem::path assetsBasePath = "../Assets";
+
+    m_renderer = std::make_unique<VulkanRenderer>(
+		assetsBasePath,
+    	m_vulkanRessources,
+    	PIXELS_PER_UNIT);
     m_renderer->initialize();
 
 	initImGui();
 
-    m_textureIndices.push_back(m_renderer->loadTexture("../Assets/Textures/default_texture.jpg"));
-    m_textureIndices.push_back(m_renderer->loadTexture("../Assets/Textures/texture.jpg"));
-    m_textureIndices.push_back(m_renderer->loadTexture("../Assets/Textures/Flame.png"));
-    m_textureIndices.push_back(m_renderer->loadTexture("../Assets/Textures/wood_1.png"));
-	m_textureIndices.push_back(m_renderer->loadTexture("../Assets/Textures/gaius.png"));
+	m_atlasEntries = TextureAtlasParser::parseAtlas(assetsBasePath / "Textures/textures.atlas");
+
+	for (const auto& atlas: m_atlasEntries)
+	{
+		m_textureIndices.push_back(m_renderer->loadTexture(atlas));
+	}
 
     m_world = std::make_unique<World>();
     m_map = std::make_unique<Map>(50, 50, 1);
@@ -149,6 +156,7 @@ void Game::initImGui()
 void Game::RunLoop()
 {
     auto startOfLastUpdate = std::chrono::high_resolution_clock::now();
+	float timeSinceLastUpdateLoop = 0;
 
     while (!glfwWindowShouldClose(m_window))
     {
@@ -170,6 +178,18 @@ void Game::RunLoop()
 
         startOfLastUpdate = startOfCurrentUpdate;
 
+    	timeSinceLastUpdateLoop += step.deltaMilliseconds;
+    	if (timeSinceLastUpdateLoop >= 100)
+    	{
+    		for (auto& tile : m_map->getTiles())
+    		{
+    			const auto& atlasEntry = m_atlasEntries[tile.sprite.textureIndex];
+    			tile.sprite.currentFrame = (tile.sprite.currentFrame + 1) % atlasEntry.frames.size();
+    		}
+
+    		timeSinceLastUpdateLoop = 0;
+    	}
+
         const auto startOfRender = std::chrono::high_resolution_clock::now();
 
         ImGui_ImplVulkan_NewFrame();
@@ -183,7 +203,7 @@ void Game::RunLoop()
     	ImGui::Render();
     	ImDrawData* uiData = ImGui::GetDrawData();
 
-    	m_renderer->draw_scene(*m_camera, *m_map, *m_world, uiData);
+    	m_renderer->draw_scene(*m_camera, *m_map, *m_world, m_atlasEntries, uiData);
 
         const auto endOfRender = std::chrono::high_resolution_clock::now();
 
