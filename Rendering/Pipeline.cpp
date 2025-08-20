@@ -44,8 +44,8 @@ VkShaderModule createShaderModule(VkDevice device, const std::vector<char>& code
 
 Pipeline::~Pipeline()
 {
-    const auto device = m_vulkanRessources->m_logicalDevice;
-    const auto allocator = m_vulkanRessources->m_allocator;
+    const auto device = m_vulkanResources->m_logicalDevice;
+    const auto allocator = m_vulkanResources->m_allocator;
 
     vkDestroyDescriptorPool(device, m_descriptorPool, allocator);
     vkDestroyPipeline(device, m_pipeline, allocator);
@@ -61,7 +61,7 @@ Pipeline::Pipeline(
     size_t swapchainImageCount,
     VkFormat swapchainImageFormat)
 {
-    m_vulkanRessources = ressources;
+    m_vulkanResources = ressources;
 
     initializeDescriptorPool(swapchainImageCount);
     initializeDescriptorSetLayout();
@@ -223,9 +223,9 @@ void Pipeline::initializeDescriptorSetLayout()
     createInfo.pBindings = bindings.data();
 
     const VkResult result = vkCreateDescriptorSetLayout(
-        m_vulkanRessources->m_logicalDevice,
+        m_vulkanResources->m_logicalDevice,
         &createInfo,
-        m_vulkanRessources->m_allocator,
+        m_vulkanResources->m_allocator,
         &m_descriptorSetLayout);
 
     if (result != VK_SUCCESS)
@@ -248,9 +248,9 @@ void Pipeline::initializeObjectsBufferLayout()
     createInfo.pBindings = &objectsBufferBinding;
 
     const VkResult result = vkCreateDescriptorSetLayout(
-        m_vulkanRessources->m_logicalDevice,
+        m_vulkanResources->m_logicalDevice,
         &createInfo,
-        m_vulkanRessources->m_allocator,
+        m_vulkanResources->m_allocator,
         &m_descriptorSetLayoutObjectsBuffer);
 
     if (result != VK_SUCCESS)
@@ -262,7 +262,7 @@ void Pipeline::initializeObjectsBufferLayout()
 void Pipeline::initializeDescriptorPool(size_t swapchainImageCount)
 {
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(m_vulkanRessources->m_physicalDevice, &properties);
+    vkGetPhysicalDeviceProperties(m_vulkanResources->m_physicalDevice, &properties);
 
     std::array<VkDescriptorPoolSize, 3> poolSizes{};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -280,9 +280,9 @@ void Pipeline::initializeDescriptorPool(size_t swapchainImageCount)
     descriptorPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
     const VkResult result = vkCreateDescriptorPool(
-        m_vulkanRessources->m_logicalDevice,
+        m_vulkanResources->m_logicalDevice,
         &descriptorPoolInfo,
-        m_vulkanRessources->m_allocator,
+        m_vulkanResources->m_allocator,
         &m_descriptorPool);
 
     if (result != VK_SUCCESS) {

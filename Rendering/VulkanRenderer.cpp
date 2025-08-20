@@ -28,14 +28,14 @@ VulkanRenderer::VulkanRenderer(
     uint32_t pixelsPerUnit)
 {
     m_assetsBasePath = assetsBasePath;
-    m_vulkanRessources = resources;
+    m_vulkanResources = resources;
     m_pixelsPerUnit = pixelsPerUnit;
 }
 
 VulkanRenderer::~VulkanRenderer()
 {
-    const auto device = m_vulkanRessources->m_logicalDevice;
-    const auto allocator = m_vulkanRessources->m_allocator;
+    const auto device = m_vulkanResources->m_logicalDevice;
+    const auto allocator = m_vulkanResources->m_allocator;
     const auto& descriptorPool =  m_pipeline->getDescriptorPool();
 
     vkDeviceWaitIdle(device);
@@ -66,9 +66,9 @@ VulkanRenderer::~VulkanRenderer()
 
 void VulkanRenderer::initialize()
 {
-    m_swapchain = std::make_unique<Swapchain>(m_vulkanRessources);
+    m_swapchain = std::make_unique<Swapchain>(m_vulkanResources);
     m_pipeline = std::make_unique<Pipeline>(
-        m_vulkanRessources,
+        m_vulkanResources,
         "../Shaders/vert.spv",
         "../Shaders/frag.spv",
         m_swapchain->getImageCount(),
@@ -92,7 +92,7 @@ void VulkanRenderer::initialize()
     objectBufferInfo.pSetLayouts = descriptorSetLayouts.data();
 
     const VkResult result = vkAllocateDescriptorSets(
-            m_vulkanRessources->m_logicalDevice,
+            m_vulkanResources->m_logicalDevice,
             &objectBufferInfo,
             m_objectBufferDescriptors.data());
 
@@ -105,21 +105,21 @@ void VulkanRenderer::initialize()
     {
         m_cameraBuffers.emplace_back(
             std::make_unique<Buffer>(
-                m_vulkanRessources,
+                m_vulkanResources,
                 sizeof(CameraUniformData),
                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
 
         m_objectStagingBuffers.emplace_back(
             std::make_unique<Buffer>(
-                m_vulkanRessources,
+                m_vulkanResources,
                 sizeof(InstanceData) * 10000,
                 VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
 
         m_objectBuffers.emplace_back(
             std::make_unique<Buffer>(
-                m_vulkanRessources,
+                m_vulkanResources,
                 sizeof(InstanceData) * 10000,
                 VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
@@ -139,7 +139,7 @@ void VulkanRenderer::initialize()
         writeDescriptorSet.pBufferInfo = &bufferInfo;
 
         vkUpdateDescriptorSets(
-            m_vulkanRessources->m_logicalDevice,
+            m_vulkanResources->m_logicalDevice,
             1,
             &writeDescriptorSet,
             0,
@@ -166,7 +166,7 @@ void VulkanRenderer::initializeDefaultMeshes()
 
 size_t VulkanRenderer::loadTexture(const AtlasEntry& spriteInfo)
 {
-    m_textures.emplace_back(std::make_unique<Texture2D>(m_vulkanRessources, m_assetsBasePath, spriteInfo));
+    m_textures.emplace_back(std::make_unique<Texture2D>(m_vulkanResources, m_assetsBasePath, spriteInfo));
 
     const size_t imageCount =  m_swapchain->getImageCount();
 
@@ -175,7 +175,7 @@ size_t VulkanRenderer::loadTexture(const AtlasEntry& spriteInfo)
         if (m_defaultDescriptorSets[i] != VK_NULL_HANDLE)
         {
             vkFreeDescriptorSets(
-                m_vulkanRessources->m_logicalDevice,
+                m_vulkanResources->m_logicalDevice,
                 m_pipeline->getDescriptorPool(),
                 1,
                 &m_defaultDescriptorSets[i]);
@@ -193,7 +193,7 @@ size_t VulkanRenderer::loadTexture(const AtlasEntry& spriteInfo)
     allocInfo.pSetLayouts = layouts.data();
 
     const auto result = vkAllocateDescriptorSets(
-            m_vulkanRessources->m_logicalDevice,
+            m_vulkanResources->m_logicalDevice,
             &allocInfo,
             m_defaultDescriptorSets.data());
 
@@ -241,7 +241,7 @@ size_t VulkanRenderer::loadTexture(const AtlasEntry& spriteInfo)
         descriptorWrites[1].pImageInfo = imageInfos.data();
 
         vkUpdateDescriptorSets(
-            m_vulkanRessources->m_logicalDevice,
+            m_vulkanResources->m_logicalDevice,
             static_cast<uint32_t>(descriptorWrites.size()),
             descriptorWrites.data(),
             0,
@@ -264,7 +264,7 @@ void VulkanRenderer::onMeshCreated(const Mesh& mesh)
     }
 
     auto vertexBuffer = std::make_unique<Buffer>(
-        m_vulkanRessources,
+        m_vulkanResources,
         sizeof(vertices[0]) * vertices.size(),
         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -272,7 +272,7 @@ void VulkanRenderer::onMeshCreated(const Mesh& mesh)
     m_vertexBuffers[index] = std::move(vertexBuffer);
 
     auto indexBuffer = std::make_unique<Buffer>(
-        m_vulkanRessources,
+        m_vulkanResources,
         sizeof(indices[0]) * indices.size(),
         VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -283,7 +283,7 @@ void VulkanRenderer::onMeshCreated(const Mesh& mesh)
 void VulkanRenderer::initializeSampler()
 {
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(m_vulkanRessources->m_physicalDevice, &properties);
+    vkGetPhysicalDeviceProperties(m_vulkanResources->m_physicalDevice, &properties);
 
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -304,9 +304,9 @@ void VulkanRenderer::initializeSampler()
     samplerInfo.maxLod = 0.0f;
 
     const VkResult result = vkCreateSampler(
-        m_vulkanRessources->m_logicalDevice,
+        m_vulkanResources->m_logicalDevice,
         &samplerInfo,
-        m_vulkanRessources->m_allocator,
+        m_vulkanResources->m_allocator,
         &m_sampler);
 
     if (result != VK_SUCCESS) {
@@ -419,8 +419,8 @@ uint32_t VulkanRenderer::updateObjectsBuffer(
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    vkQueueSubmit(m_vulkanRessources->m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(m_vulkanRessources->m_graphicsQueue);
+    vkQueueSubmit(m_vulkanResources->m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(m_vulkanResources->m_graphicsQueue);
 
     return objectsToDraw;
 }
@@ -435,11 +435,11 @@ void VulkanRenderer::draw_scene(
 {
     const auto currentFrameElement = m_swapchain->getCurrentFrame();
 
-    vkWaitForFences(m_vulkanRessources->m_logicalDevice, 1, &currentFrameElement->fence, VK_TRUE, UINT64_MAX);
+    vkWaitForFences(m_vulkanResources->m_logicalDevice, 1, &currentFrameElement->fence, VK_TRUE, UINT64_MAX);
 
     uint32_t imageIndex;
     VkResult result = vkAcquireNextImageKHR(
-        m_vulkanRessources->m_logicalDevice,
+        m_vulkanResources->m_logicalDevice,
         m_swapchain->m_swapchain,
         UINT64_MAX,
         currentFrameElement->startSemaphore,
@@ -448,10 +448,10 @@ void VulkanRenderer::draw_scene(
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
     {
-        vkDeviceWaitIdle(m_vulkanRessources->m_logicalDevice);
+        vkDeviceWaitIdle(m_vulkanResources->m_logicalDevice);
 
         m_swapchain.reset();
-        m_swapchain = std::make_unique<Swapchain>(m_vulkanRessources);
+        m_swapchain = std::make_unique<Swapchain>(m_vulkanResources);
         return;
     }
 
@@ -465,7 +465,7 @@ void VulkanRenderer::draw_scene(
     if (currentImageElement->lastFence)
     {
         const VkResult fenceResult = vkWaitForFences(
-            m_vulkanRessources->m_logicalDevice,
+            m_vulkanResources->m_logicalDevice,
             1,
             &currentImageElement->lastFence,
             true,
@@ -479,7 +479,7 @@ void VulkanRenderer::draw_scene(
 
     currentImageElement->lastFence = currentFrameElement->fence;
 
-    vkResetFences(m_vulkanRessources->m_logicalDevice, 1, &(currentFrameElement->fence));
+    vkResetFences(m_vulkanResources->m_logicalDevice, 1, &(currentFrameElement->fence));
 
     vkResetCommandBuffer(currentImageElement->commandBuffer, 0);
 
@@ -600,7 +600,7 @@ void VulkanRenderer::draw_scene(
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = &currentFrameElement->endSemaphore;
 
-    if(vkQueueSubmit(m_vulkanRessources->m_graphicsQueue, 1, &submitInfo, currentFrameElement->fence));
+    if(vkQueueSubmit(m_vulkanResources->m_graphicsQueue, 1, &submitInfo, currentFrameElement->fence));
 
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -610,14 +610,14 @@ void VulkanRenderer::draw_scene(
     presentInfo.pSwapchains = &m_swapchain->m_swapchain;
     presentInfo.pImageIndices = &imageIndex;
 
-    result = vkQueuePresentKHR(m_vulkanRessources->m_graphicsQueue, &presentInfo);
+    result = vkQueuePresentKHR(m_vulkanResources->m_graphicsQueue, &presentInfo);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
     {
-        vkDeviceWaitIdle(m_vulkanRessources->m_logicalDevice);
+        vkDeviceWaitIdle(m_vulkanResources->m_logicalDevice);
 
         m_swapchain.reset();
-        m_swapchain = std::make_unique<Swapchain>(m_vulkanRessources);
+        m_swapchain = std::make_unique<Swapchain>(m_vulkanResources);
         return;
     }
 

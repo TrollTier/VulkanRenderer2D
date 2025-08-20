@@ -47,7 +47,7 @@ public:
     }
 
 private:
-    std::shared_ptr<VulkanResources> m_vulkanRessources;
+    std::shared_ptr<VulkanResources> m_vulkanResources;
 
     VkDescriptorSetLayout m_descriptorSetLayout = VK_NULL_HANDLE;
     VkDescriptorSetLayout m_descriptorSetLayoutObjectsBuffer = VK_NULL_HANDLE;

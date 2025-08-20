@@ -49,7 +49,7 @@ private:
     std::filesystem::path m_assetsBasePath;
     std::vector<VkDescriptorSet> m_defaultDescriptorSets;
 
-    std::shared_ptr<VulkanResources> m_vulkanRessources;
+    std::shared_ptr<VulkanResources> m_vulkanResources;
     std::unique_ptr<Swapchain> m_swapchain;
     std::unique_ptr<Pipeline> m_pipeline;
 

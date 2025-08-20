@@ -16,7 +16,7 @@
 class Game
 {
 public:
-    const uint32_t PIXELS_PER_UNIT = 256;
+    const uint32_t PIXELS_PER_UNIT = 64;
 
     Game();
 
@@ -28,7 +28,7 @@ private:
 
     GLFWwindow* m_window;
     std::shared_ptr<VulkanWindow> m_vulkanWindow;
-    std::shared_ptr<VulkanResources> m_vulkanRessources;
+    std::shared_ptr<VulkanResources> m_vulkanResources;
     std::unique_ptr<VulkanRenderer> m_renderer;
     std::unique_ptr<World> m_world;
     std::unique_ptr<Map> m_map;

@@ -42,8 +42,8 @@ Game::Game()
         "VK_LAYER_KHRONOS_validation"
     };
 
-    m_vulkanRessources = std::make_shared<VulkanResources>(m_vulkanWindow);
-    m_vulkanRessources->initialize(
+    m_vulkanResources = std::make_shared<VulkanResources>(m_vulkanWindow);
+    m_vulkanResources->initialize(
         true,
         m_validationLayers,
         instanceExtensions);
@@ -52,7 +52,7 @@ Game::Game()
 
     m_renderer = std::make_unique<VulkanRenderer>(
 		assetsBasePath,
-    	m_vulkanRessources,
+    	m_vulkanResources,
     	PIXELS_PER_UNIT);
     m_renderer->initialize();
 
@@ -112,7 +112,7 @@ void Game::initImGui()
 	pool_info.poolSizeCount = std::size(poolSizes);
 	pool_info.pPoolSizes = poolSizes;
 
-	if (vkCreateDescriptorPool(m_vulkanRessources->m_logicalDevice, &pool_info, nullptr, &m_imGuiPool) != VK_SUCCESS)
+	if (vkCreateDescriptorPool(m_vulkanResources->m_logicalDevice, &pool_info, nullptr, &m_imGuiPool) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create descriptor pool for ImGui");
 	}
@@ -137,11 +137,11 @@ void Game::initImGui()
 	ImGui_ImplGlfw_InitForVulkan(m_window, true);
 	ImGui_ImplVulkan_InitInfo init_info = {};
 	init_info.ApiVersion = VK_API_VERSION_1_3;              // Pass in your value of VkApplicationInfo::apiVersion, otherwise will default to header version.
-	init_info.Instance = m_vulkanRessources->m_instance;
-	init_info.PhysicalDevice = m_vulkanRessources->m_physicalDevice;
-	init_info.Device = m_vulkanRessources->m_logicalDevice;
-	init_info.QueueFamily = m_vulkanRessources->m_graphicsQueueFamilyIndex;
-	init_info.Queue = m_vulkanRessources->m_graphicsQueue;
+	init_info.Instance = m_vulkanResources->m_instance;
+	init_info.PhysicalDevice = m_vulkanResources->m_physicalDevice;
+	init_info.Device = m_vulkanResources->m_logicalDevice;
+	init_info.QueueFamily = m_vulkanResources->m_graphicsQueueFamilyIndex;
+	init_info.Queue = m_vulkanResources->m_graphicsQueue;
 	init_info.DescriptorPool = m_imGuiPool;
 	init_info.Subpass = 0;
 	init_info.MinImageCount = imageCount;
@@ -215,9 +215,9 @@ void Game::RunLoop()
         std::cout << "Render:" << std::chrono::duration_cast<std::chrono::milliseconds>(renderDuration).count() << std::endl;
     }
 
-	vkDeviceWaitIdle(m_vulkanRessources->m_logicalDevice);
+	vkDeviceWaitIdle(m_vulkanResources->m_logicalDevice);
 	ImGui_ImplVulkan_Shutdown();
-	vkDestroyDescriptorPool(m_vulkanRessources->m_logicalDevice, m_imGuiPool, nullptr);
+	vkDestroyDescriptorPool(m_vulkanResources->m_logicalDevice, m_imGuiPool, nullptr);
 }
 
 void Game::mouseButtonCallback(int button, int action, int mods)
