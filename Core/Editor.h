@@ -13,12 +13,12 @@
 #include "Timestep.h"
 #include "../Rendering/VulkanRenderer.h"
 
-class Game
+class Editor
 {
 public:
     const uint32_t PIXELS_PER_UNIT = 64;
 
-    Game();
+    Editor();
 
     void RunLoop();
     void mouseButtonCallback(int button, int action, int mods);

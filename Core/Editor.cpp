@@ -2,7 +2,7 @@
 // Created by patri on 24.07.2025.
 //
 
-#include "Game.h"
+#include "Editor.h"
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #define GLFW_INCLUDE_VULKAN
@@ -21,7 +21,7 @@
 
 #include "../Core/World.h"
 
-Game::Game()
+Editor::Editor()
 {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -88,7 +88,7 @@ Game::Game()
 	glfwSetWindowSizeCallback(m_window, glfwWindowResize);
 }
 
-void Game::initImGui()
+void Editor::initImGui()
 {
     VkDescriptorPoolSize poolSizes[] =
 	{
@@ -150,7 +150,7 @@ void Game::initImGui()
 	ImGui_ImplVulkan_Init(&init_info);
 }
 
-void Game::RunLoop()
+void Editor::RunLoop()
 {
     auto startOfLastUpdate = std::chrono::high_resolution_clock::now();
 	float timeSinceLastUpdateLoop = 0;
@@ -196,9 +196,15 @@ void Game::RunLoop()
 
     	ImGui::Begin("Stats", &showImGui, ImGuiWindowFlags_AlwaysAutoResize);
     	ImGui::Text("This is some useful text.");
-    	ImGui::End();
 
+    	if (ImGui::Button("Save"))
+    	{
+    		std::cout << "Saving..." << std::endl;
+    	}
+
+    	ImGui::End();
     	ImGui::Render();
+
     	ImDrawData* uiData = ImGui::GetDrawData();
 
     	m_renderer->draw_scene(*m_camera, *m_map, *m_world, m_atlasEntries, uiData);
@@ -218,9 +224,12 @@ void Game::RunLoop()
 	vkDestroyDescriptorPool(m_vulkanResources->m_logicalDevice, m_imGuiPool, nullptr);
 }
 
-void Game::mouseButtonCallback(int button, int action, int mods)
+void Editor::mouseButtonCallback(int button, int action, int mods)
 {
-	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow))
+	ImGuiIO& io = ImGui::GetIO();
+	io.AddMouseButtonEvent(button, action);
+
+	if (io.WantCaptureMouse)
 	{
 		return;
 	}
@@ -253,7 +262,7 @@ void Game::mouseButtonCallback(int button, int action, int mods)
     }
 }
 
-void Game::handleKeyInput(const Timestep& timestep)
+void Editor::handleKeyInput(const Timestep& timestep)
 {
     glm::vec3 cameraMovement(0.0f, 0.0f, 0.0f);
 
@@ -293,13 +302,13 @@ void Game::handleKeyInput(const Timestep& timestep)
 }
 
 
-void Game::glfwMouseButtonHandler(GLFWwindow* window, int button, int action, int mods)
+void Editor::glfwMouseButtonHandler(GLFWwindow* window, int button, int action, int mods)
 {
-    auto game = reinterpret_cast<Game*>(glfwGetWindowUserPointer(window));
+    auto game = reinterpret_cast<Editor*>(glfwGetWindowUserPointer(window));
     game->mouseButtonCallback(button, action, mods);
 }
 
-void Game::handleWindowResize()
+void Editor::handleWindowResize()
 {
 	const auto windowExtent = m_vulkanWindow->getWindowExtent();
 
@@ -319,9 +328,9 @@ void Game::handleWindowResize()
 }
 
 
-void Game::glfwWindowResize(GLFWwindow* window, int width, int height)
+void Editor::glfwWindowResize(GLFWwindow* window, int width, int height)
 {
-	auto game = reinterpret_cast<Game*>(glfwGetWindowUserPointer(window));
+	auto game = reinterpret_cast<Editor*>(glfwGetWindowUserPointer(window));
 	game->handleWindowResize();
 }
 

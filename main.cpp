@@ -3,11 +3,11 @@
 
 #include <iostream>
 
-#include "Core/Game.h"
+#include "Core/Editor.h"
 
 int main()
 {
-    Game game{};
+    Editor game{};
 
     try
     {

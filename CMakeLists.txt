@@ -15,8 +15,8 @@ add_executable(FireEmblemClone main.cpp
         Core/Sprite.h
         Core/World.cpp
         Core/World.h
-        Core/Game.cpp
-        Core/Game.h
+        Core/Editor.cpp
+        Core/Editor.h
         Core/Tile.cpp
         Core/Tile.h
         Core/Map.cpp
