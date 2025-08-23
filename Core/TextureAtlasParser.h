@@ -42,8 +42,12 @@ public:
 private:
     static AtlasEntry parseAtlasEntry(std::string& line)
     {
-        const size_t nameSeparator = line.find(';');
-        const std::string fileName = line.substr(0, nameSeparator);
+        const size_t idSeparator = line.find(';');
+        const std::string idInput = line.substr(0, idSeparator);
+        const uint32_t id = toUInt32(idInput);
+
+        const size_t nameSeparator = line.find(';', idSeparator + 1);
+        const std::string fileName = line.substr(idSeparator + 1, nameSeparator - idSeparator - 1);
 
         const size_t framesCountSeparator = line.find(';', nameSeparator + 1);
         const std::string framesCountInput = line.substr(nameSeparator + 1, framesCountSeparator - nameSeparator - 1);
@@ -78,6 +82,7 @@ private:
 
         AtlasEntry entry
         {
+            id,
             fileName,
             std::move(frames)
         };
@@ -89,6 +94,14 @@ private:
     {
         const int parsed = std::stoi(input);
         const uint16_t result(parsed);
+
+        return result;
+    }
+
+    static uint32_t toUInt32(const std::string& input)
+    {
+        const int parsed = std::stoi(input);
+        const uint32_t result(parsed);
 
         return result;
     }

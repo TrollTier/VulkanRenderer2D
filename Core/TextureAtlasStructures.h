@@ -19,6 +19,7 @@ typedef struct
 
 typedef struct
 {
+    const uint32_t id;
     const std::string filePath;
     const std::vector<AtlasFrame> frames;
 } AtlasEntry;
