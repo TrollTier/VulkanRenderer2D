@@ -119,9 +119,6 @@ void Game::initImGui()
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO();
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
 	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
@@ -136,7 +133,7 @@ void Game::initImGui()
 	// Setup Platform/Renderer backends
 	ImGui_ImplGlfw_InitForVulkan(m_window, true);
 	ImGui_ImplVulkan_InitInfo init_info = {};
-	init_info.ApiVersion = VK_API_VERSION_1_3;              // Pass in your value of VkApplicationInfo::apiVersion, otherwise will default to header version.
+	init_info.ApiVersion = VK_API_VERSION_1_3;
 	init_info.Instance = m_vulkanResources->m_instance;
 	init_info.PhysicalDevice = m_vulkanResources->m_physicalDevice;
 	init_info.Device = m_vulkanResources->m_logicalDevice;
@@ -157,6 +154,7 @@ void Game::RunLoop()
 {
     auto startOfLastUpdate = std::chrono::high_resolution_clock::now();
 	float timeSinceLastUpdateLoop = 0;
+	bool showImGui = true;
 
     while (!glfwWindowShouldClose(m_window))
     {
@@ -196,7 +194,7 @@ void Game::RunLoop()
     	ImGui_ImplGlfw_NewFrame();
     	ImGui::NewFrame();
 
-    	ImGui::Begin("Stats");
+    	ImGui::Begin("Stats", &showImGui, ImGuiWindowFlags_AlwaysAutoResize);
     	ImGui::Text("This is some useful text.");
     	ImGui::End();
 
@@ -222,6 +220,11 @@ void Game::RunLoop()
 
 void Game::mouseButtonCallback(int button, int action, int mods)
 {
+	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow))
+	{
+		return;
+	}
+
     if (button != GLFW_MOUSE_BUTTON_LEFT || action != GLFW_PRESS)
     {
         return;
@@ -284,7 +287,7 @@ void Game::handleKeyInput(const Timestep& timestep)
     }
 
     cameraMovement = glm::normalize(cameraMovement);
-    cameraMovement *= 2 * timestep.deltaSeconds;
+    cameraMovement *= 5 * timestep.deltaSeconds;
 
     m_camera->moveBy(cameraMovement);
 }
