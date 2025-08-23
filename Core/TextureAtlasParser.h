@@ -40,38 +40,50 @@ public:
     }
 
 private:
+    struct CsvElement
+    {
+        const uint16_t startIndex;
+        const uint16_t endIndex;
+    };
+
     static AtlasEntry parseAtlasEntry(std::string& line)
     {
-        const size_t idSeparator = line.find(';');
-        const std::string idInput = line.substr(0, idSeparator);
-        const uint32_t id = toUInt32(idInput);
+        std::vector<CsvElement> elements{};
 
-        const size_t nameSeparator = line.find(';', idSeparator + 1);
-        const std::string fileName = line.substr(idSeparator + 1, nameSeparator - idSeparator - 1);
+        uint16_t lastSeparatorIndex = -1;
+        for (size_t i = 0; i < line.size(); i++)
+        {
+            if (i > UINT16_MAX)
+            {
+                throw std::runtime_error("Unexpected line length for texture atlas entry");
+            }
 
-        const size_t framesCountSeparator = line.find(';', nameSeparator + 1);
-        const std::string framesCountInput = line.substr(nameSeparator + 1, framesCountSeparator - nameSeparator - 1);
-        const uint16_t framesCount = toUInt16(framesCountInput);
+            if (line[i] == ';')
+            {
+                elements.emplace_back(lastSeparatorIndex + 1, i - 1);
+                lastSeparatorIndex = i;
+            }
+        }
+
+        // Last element, no ;
+        elements.emplace_back(lastSeparatorIndex + 1, line.size() - 1);
+
+        const uint32_t id = toUInt32(line, elements[0]);
+        const std::string fileName = toString(line, elements[1]);
+        const uint16_t framesCount = toUInt16(line, elements[2]);
 
         std::vector<AtlasFrame> frames{framesCount};
-        size_t currentSeparator = framesCountSeparator;
 
         for (uint16_t i = 0; i < framesCount; i++)
         {
-            const uint16_t frameIndexSeparator = line.find(';', currentSeparator + 1);
-            const std::string frameIndexInput = line.substr(currentSeparator + 1, frameIndexSeparator - currentSeparator - 1);
-            const uint16_t frameIndex = toUInt16(frameIndexInput);
-            currentSeparator = frameIndexSeparator;
+            const uint16_t frameParametersOffset = 3 + (i * 5); // Frames offset + number of elements per frame
+            const uint16_t frameIndex = toUInt16(line, elements[frameParametersOffset]);
 
             std::array<uint16_t, 4> frameBounds{};
 
             for (uint16_t paramIndex = 0; paramIndex < 4; paramIndex++)
             {
-                const uint16_t parameterSeparatorIndex = line.find(';', currentSeparator + 1);
-                const std::string parameterInput = line.substr(currentSeparator + 1, parameterSeparatorIndex - currentSeparator - 1);
-
-                frameBounds[paramIndex] = toUInt16(parameterInput);
-                currentSeparator = parameterSeparatorIndex;
+                frameBounds[paramIndex] = toUInt16(line, elements[frameParametersOffset + 1 + paramIndex]);
             }
 
             frames[frameIndex].x = frameBounds[0];
@@ -90,16 +102,25 @@ private:
         return std::move(entry);
     }
 
-    static uint16_t toUInt16(const std::string& input)
+    static std::string toString(const std::string& line, CsvElement element)
     {
+        return line.substr(element.startIndex, element.endIndex - element.startIndex + 1);
+    }
+
+    static uint16_t toUInt16(const std::string& line, CsvElement& element)
+    {
+        const std::string input = line.substr(element.startIndex, element.endIndex - element.startIndex + 1);
+
         const int parsed = std::stoi(input);
         const uint16_t result(parsed);
 
         return result;
     }
 
-    static uint32_t toUInt32(const std::string& input)
+    static uint32_t toUInt32(const std::string& line, CsvElement& element)
     {
+        const std::string input = line.substr(element.startIndex, element.endIndex - element.startIndex + 1);
+
         const int parsed = std::stoi(input);
         const uint32_t result(parsed);
 
