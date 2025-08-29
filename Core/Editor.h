@@ -16,12 +16,14 @@
 class Editor
 {
 public:
-    const uint32_t PIXELS_PER_UNIT = 64;
+    const float ZOOM_STEP_FACTOR = 1.1f;
+    int32_t PIXELS_PER_UNIT = 64;
 
     Editor();
 
     void RunLoop();
     void mouseButtonCallback(int button, int action, int mods);
+    void scrollCallback(double xoffset, double yoffset);
 
 private:
     std::vector<AtlasEntry> m_atlasEntries;
@@ -38,9 +40,11 @@ private:
     VkDescriptorPool m_imGuiPool = VK_NULL_HANDLE;
 
     void initImGui();
+    glm::vec2 screenToWorld(const glm::vec2& screenPos) const;
 
     void handleKeyInput(const Timestep& timestep);
     static void glfwMouseButtonHandler(GLFWwindow* window, int button, int action, int mods);
+    static void glfwScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 
     void handleWindowResize();
     static void glfwWindowResize(GLFWwindow* window, int width, int height);

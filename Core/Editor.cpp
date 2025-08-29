@@ -86,6 +86,7 @@ Editor::Editor()
 
     glfwSetMouseButtonCallback(m_window, glfwMouseButtonHandler);
 	glfwSetWindowSizeCallback(m_window, glfwWindowResize);
+	glfwSetScrollCallback(m_window, glfwScrollCallback);
 }
 
 void Editor::initImGui()
@@ -224,6 +225,15 @@ void Editor::RunLoop()
 	vkDestroyDescriptorPool(m_vulkanResources->m_logicalDevice, m_imGuiPool, nullptr);
 }
 
+glm::vec2 Editor::screenToWorld(const glm::vec2& screenPos) const
+{
+	const auto& frustum = m_camera->getFrustum();
+	const auto x = screenPos.x / static_cast<float>(PIXELS_PER_UNIT) + frustum.x;
+	const auto y = screenPos.y / static_cast<float>(PIXELS_PER_UNIT) + frustum.y;
+
+	return { x, y };
+}
+
 void Editor::mouseButtonCallback(int button, int action, int mods)
 {
 	ImGuiIO& io = ImGui::GetIO();
@@ -242,13 +252,10 @@ void Editor::mouseButtonCallback(int button, int action, int mods)
     double xpos, ypos;
     glfwGetCursorPos(m_window, &xpos, &ypos);
 
-    const auto& frustum = m_camera->getFrustum();
+    const auto worldCoords = screenToWorld({ xpos, ypos});
 
-    const auto widthToWorldX = xpos / PIXELS_PER_UNIT + frustum.x;
-    const auto heightToWorldY = ypos / PIXELS_PER_UNIT + frustum.y;
-
-    const auto tileRow = static_cast<int16_t>(std::floor(heightToWorldY));
-    const auto tileColumn = static_cast<int16_t>(std::floor(widthToWorldX));
+    const auto tileRow = static_cast<int16_t>(std::floor(worldCoords.y));
+    const auto tileColumn = static_cast<int16_t>(std::floor(worldCoords.x));
 
     if (tileRow < 0 || tileColumn < 0 )
     {
@@ -301,12 +308,43 @@ void Editor::handleKeyInput(const Timestep& timestep)
     m_camera->moveBy(cameraMovement);
 }
 
-
 void Editor::glfwMouseButtonHandler(GLFWwindow* window, int button, int action, int mods)
 {
     auto game = reinterpret_cast<Editor*>(glfwGetWindowUserPointer(window));
     game->mouseButtonCallback(button, action, mods);
 }
+
+void Editor::scrollCallback(double xoffset, double yoffset)
+{
+	if (yoffset > 0)
+	{
+		PIXELS_PER_UNIT = std::floor(static_cast<float>(PIXELS_PER_UNIT) * ZOOM_STEP_FACTOR);
+	}
+	else if (yoffset < 0)
+	{
+		PIXELS_PER_UNIT = std::floor(static_cast<float>(PIXELS_PER_UNIT) / ZOOM_STEP_FACTOR);
+	}
+
+	m_renderer->setPixelsPerUnit(PIXELS_PER_UNIT);
+
+	const auto windowExtent = m_vulkanWindow->getWindowExtent();
+	const CameraArea visibleArea
+	{
+		static_cast<float>(windowExtent.width) / static_cast<float>(PIXELS_PER_UNIT),
+		static_cast<float>(windowExtent.height) / static_cast<float>(PIXELS_PER_UNIT),
+		1.0f,
+		10.0f
+	};
+
+	m_camera->setVisibleArea(visibleArea);
+}
+
+void Editor::glfwScrollCallback(GLFWwindow *window, double xoffset, double yoffset)
+{
+	auto game = reinterpret_cast<Editor*>(glfwGetWindowUserPointer(window));
+	game->scrollCallback(xoffset, yoffset);
+}
+
 
 void Editor::handleWindowResize()
 {

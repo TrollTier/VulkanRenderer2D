@@ -39,6 +39,13 @@ void Camera::moveTo(glm::vec3 worldPosition)
     updatePosition(worldPosition);
 }
 
+void Camera::setVisibleArea(CameraArea visibleArea)
+{
+    m_visibleArea = visibleArea;
+    updatePosition(m_worldPosition);
+}
+
+
 void Camera::updatePosition(glm::vec3 worldPosition)
 {
     m_worldPosition = worldPosition;

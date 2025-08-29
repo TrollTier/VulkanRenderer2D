@@ -35,6 +35,7 @@ public:
 
     void moveTo(glm::vec3 worldPosition);
     void moveBy(glm::vec3 deltaPosition);
+    void setVisibleArea(CameraArea visibleArea);
 
     [[nodiscard]] const glm::mat4& getViewProjectionMatrix() const;
     [[nodiscard]] const CameraFrustum& getFrustum() const;

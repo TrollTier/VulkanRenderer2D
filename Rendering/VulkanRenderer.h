@@ -44,6 +44,8 @@ public:
         return ptr;
     }
 
+    void setPixelsPerUnit(uint32_t pixelsPerUnit) { m_pixelsPerUnit = pixelsPerUnit; }
+
 private:
     uint32_t m_pixelsPerUnit = 1;
     std::filesystem::path m_assetsBasePath;
