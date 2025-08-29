@@ -318,7 +318,10 @@ void Editor::scrollCallback(double xoffset, double yoffset)
 {
 	if (yoffset > 0)
 	{
-		PIXELS_PER_UNIT = std::floor(static_cast<float>(PIXELS_PER_UNIT) * ZOOM_STEP_FACTOR);
+		PIXELS_PER_UNIT = std::floor(
+			std::max(
+				static_cast<float>(PIXELS_PER_UNIT) * ZOOM_STEP_FACTOR,
+				static_cast<float>(PIXELS_PER_UNIT + 1)));
 	}
 	else if (yoffset < 0)
 	{
