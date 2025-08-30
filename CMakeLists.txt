@@ -26,7 +26,8 @@ add_executable(FireEmblemClone main.cpp
         Core/ViewFrustrum.h
         Core/SpriteFrame.h
         Core/TextureAtlasParser.h
-        Core/TextureAtlasStructures.h)
+        Core/TextureAtlasStructures.h
+        Core/TileTypes.h)
 
 set( GLFW_BUILD_DOCS OFF CACHE BOOL  "GLFW lib only" )
 add_subdirectory(include/glfw-3.4)

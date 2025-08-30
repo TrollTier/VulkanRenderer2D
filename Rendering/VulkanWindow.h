@@ -17,11 +17,11 @@ typedef struct
 
 class VulkanWindow {
 public :
-    VulkanWindow(GLFWwindow *window);
+    explicit VulkanWindow(GLFWwindow *window);
     VkResult createSurface(VkInstance instance, VkSurfaceKHR* surface);
     void fillRequiredInstanceExtensions(std::vector<const char*>& extensions);
 
-    WindowExtent getWindowExtent() const;
+    [[nodiscard]] WindowExtent getWindowExtent() const;
 private:
     GLFWwindow* m_window;
 };

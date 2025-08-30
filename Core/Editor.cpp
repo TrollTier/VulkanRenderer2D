@@ -16,6 +16,7 @@
 #include <imgui_impl_vulkan.h>
 
 #include "TextureAtlasParser.h"
+#include "TileTypes.h"
 #include "Timestep.h"
 #include "../Rendering/VulkanRenderer.h"
 
@@ -154,10 +155,8 @@ void Editor::initImGui()
 void Editor::RunLoop()
 {
     auto startOfLastUpdate = std::chrono::high_resolution_clock::now();
-	float timeSinceLastUpdateLoop = 0;
-	bool showImGui = true;
 
-    while (!glfwWindowShouldClose(m_window))
+	while (!glfwWindowShouldClose(m_window))
     {
         const auto startOfFrame = std::chrono::high_resolution_clock::now();
 
@@ -174,40 +173,15 @@ void Editor::RunLoop()
         };
 
         handleKeyInput(step);
+    	updateAnimations(step);
+		setSelectedTile();
 
         startOfLastUpdate = startOfCurrentUpdate;
 
-    	timeSinceLastUpdateLoop += step.deltaMilliseconds;
-    	if (timeSinceLastUpdateLoop >= 100)
-    	{
-    		for (auto& tile : m_map->getTiles())
-    		{
-    			const auto& atlasEntry = m_atlasEntries[tile.sprite.textureIndex];
-    			tile.sprite.currentFrame = (tile.sprite.currentFrame + 1) % atlasEntry.frames.size();
-    		}
-
-    		timeSinceLastUpdateLoop = 0;
-    	}
-
         const auto startOfRender = std::chrono::high_resolution_clock::now();
 
-        ImGui_ImplVulkan_NewFrame();
-    	ImGui_ImplGlfw_NewFrame();
-    	ImGui::NewFrame();
-
-    	ImGui::Begin("Stats", &showImGui, ImGuiWindowFlags_AlwaysAutoResize);
-    	ImGui::Text("This is some useful text.");
-
-    	if (ImGui::Button("Save"))
-    	{
-    		std::cout << "Saving..." << std::endl;
-    	}
-
-    	ImGui::End();
-    	ImGui::Render();
-
+		updateUI();
     	ImDrawData* uiData = ImGui::GetDrawData();
-
     	m_renderer->draw_scene(*m_camera, *m_map, *m_world, m_atlasEntries, uiData);
 
         const auto endOfRender = std::chrono::high_resolution_clock::now();
@@ -225,6 +199,113 @@ void Editor::RunLoop()
 	vkDestroyDescriptorPool(m_vulkanResources->m_logicalDevice, m_imGuiPool, nullptr);
 }
 
+void Editor::updateAnimations(const Timestep &step)
+{
+	static float timeSinceLastUpdateLoop = 0;
+
+	if (!m_runAnimations)
+	{
+		return;
+	}
+
+	timeSinceLastUpdateLoop += step.deltaMilliseconds;
+
+	if (timeSinceLastUpdateLoop >= 100)
+	{
+		for (auto& tile : m_map->getTiles())
+		{
+			const auto& atlasEntry = m_atlasEntries[tile.sprite.textureIndex];
+			tile.sprite.currentFrame = (tile.sprite.currentFrame + 1) % atlasEntry.frames.size();
+		}
+
+		timeSinceLastUpdateLoop = 0;
+	}
+}
+
+void Editor::updateUI()
+{
+	ImGui_ImplVulkan_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+
+	ImGui::Begin("Stats", &m_showImGui, ImGuiWindowFlags_AlwaysAutoResize);
+	ImGui::Text("This is some useful text.");
+
+	if (ImGui::Button("Save"))
+	{
+		std::cout << "Saving..." << std::endl;
+	}
+
+	if (ImGui::Button("Animations"))
+	{
+		m_runAnimations = !m_runAnimations;
+	}
+
+	for (size_t i = 0; i < TileTypes.size(); i++)
+	{
+		if (ImGui::Button(TileTypes[i].tileName.data()))
+		{
+			m_selectedTileType = static_cast<int32_t>(i);
+		}
+	}
+
+	ImGui::End();
+	ImGui::Render();
+}
+
+void Editor::setSelectedTile()
+{
+	if (m_selectedTileType < 0 || ImGui::IsWindowHovered((ImGuiHoveredFlags_AnyWindow)))
+	{
+		return;
+	}
+
+	int state = glfwGetMouseButton(m_window, GLFW_MOUSE_BUTTON_LEFT);
+
+	if (state != GLFW_PRESS)
+	{
+		return;
+	}
+
+	const auto& type = TileTypes[m_selectedTileType];
+	size_t atlasTextureIndex = -1;
+	bool textureIndexFound = false;
+
+	for (size_t i = 0; i < m_atlasEntries.size() && !textureIndexFound; i++)
+	{
+		if (m_atlasEntries[i].id == type.textureAtlasEntryId)
+		{
+			atlasTextureIndex = i;
+			textureIndexFound = true;
+		}
+	}
+
+	if (!textureIndexFound)
+	{
+		return;
+	}
+
+	double xpos, ypos;
+	glfwGetCursorPos(m_window, &xpos, &ypos);
+	const auto worldPos = screenToWorld({xpos, ypos});
+
+	if (worldPos.x < 0 || worldPos.y < 0)
+	{
+		return;
+	}
+
+	const auto tileRow = static_cast<int16_t>(std::floor(worldPos.y));
+	const auto tileColumn = static_cast<int16_t>(std::floor(worldPos.x));
+
+	if (m_map->isInMap(tileColumn, tileRow))
+	{
+		auto& tile = m_map->getTileAt(tileColumn, tileRow);
+		tile.tileDataIndex = static_cast<size_t>(m_selectedTileType);
+		tile.sprite.textureIndex = static_cast<size_t>(atlasTextureIndex);
+		tile.sprite.currentFrame = type.frameIndex;
+	}
+}
+
 glm::vec2 Editor::screenToWorld(const glm::vec2& screenPos) const
 {
 	const auto& frustum = m_camera->getFrustum();
@@ -238,35 +319,6 @@ void Editor::mouseButtonCallback(int button, int action, int mods)
 {
 	ImGuiIO& io = ImGui::GetIO();
 	io.AddMouseButtonEvent(button, action);
-
-	if (io.WantCaptureMouse)
-	{
-		return;
-	}
-
-    if (button != GLFW_MOUSE_BUTTON_LEFT || action != GLFW_PRESS)
-    {
-        return;
-    }
-
-    double xpos, ypos;
-    glfwGetCursorPos(m_window, &xpos, &ypos);
-
-    const auto worldCoords = screenToWorld({ xpos, ypos});
-
-    const auto tileRow = static_cast<int16_t>(std::floor(worldCoords.y));
-    const auto tileColumn = static_cast<int16_t>(std::floor(worldCoords.x));
-
-    if (tileRow < 0 || tileColumn < 0 )
-    {
-        return;
-    }
-
-    if (m_map->isInMap(tileColumn, tileRow))
-    {
-        auto& tile = m_map->getTileAt(tileColumn, tileRow);
-        tile.sprite.textureIndex =  (tile.sprite.textureIndex + 1) % m_textureIndices.size();
-    }
 }
 
 void Editor::handleKeyInput(const Timestep& timestep)

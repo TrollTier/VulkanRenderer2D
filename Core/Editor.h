@@ -39,8 +39,16 @@ private:
 
     VkDescriptorPool m_imGuiPool = VK_NULL_HANDLE;
 
+    int32_t m_selectedTileType = -1;
+    bool m_runAnimations = true;
+    bool m_showImGui = true;
+
     void initImGui();
-    glm::vec2 screenToWorld(const glm::vec2& screenPos) const;
+    void updateAnimations(const Timestep& step);
+    void updateUI();
+    void setSelectedTile();
+
+    [[nodiscard]] glm::vec2 screenToWorld(const glm::vec2& screenPos) const;
 
     void handleKeyInput(const Timestep& timestep);
     static void glfwMouseButtonHandler(GLFWwindow* window, int button, int action, int mods);
