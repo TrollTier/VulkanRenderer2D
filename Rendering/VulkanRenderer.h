@@ -31,11 +31,8 @@ public:
     void initialize();
     size_t loadTexture(const AtlasEntry& spriteInfo);
 
-    void draw_scene(
+    void drawScene(
         const Camera& camera,
-        const Map& map,
-        const World& world,
-        const std::vector<AtlasEntry>& atlasEntries,
         ImDrawData* uiData);
 
     [[nodiscard]] const Swapchain& getSwapchain() const
@@ -92,10 +89,7 @@ private:
     uint32_t updateObjectsBuffer(
         VkCommandBuffer commandBuffer,
         size_t imageIndex,
-        const Camera& camera,
-        const Map& map,
-        const World& world,
-        const std::vector<AtlasEntry>& atlasEntries);
+        const Camera& camera);
 
     static void imageToAttachmentLayout(SwapchainElement* element);
     static void imageToPresentLayout(SwapchainElement* element);

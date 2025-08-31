@@ -346,10 +346,7 @@ void VulkanRenderer::updateCamera(const Camera& camera, size_t imageIndex)
 uint32_t VulkanRenderer::updateObjectsBuffer(
     VkCommandBuffer commandBuffer,
     size_t imageIndex,
-    const Camera& camera,
-    const Map& map,
-    const World& world,
-    const std::vector<AtlasEntry>& atlasEntries)
+    const Camera& camera)
 {
     VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -405,11 +402,8 @@ uint32_t VulkanRenderer::updateObjectsBuffer(
     return m_drawParameters.size();
 }
 
-void VulkanRenderer::draw_scene(
+void VulkanRenderer::drawScene(
     const Camera& camera,
-    const Map& map,
-    const World& world,
-    const std::vector<AtlasEntry>& atlasEntries,
     ImDrawData* uiData)
 {
     const auto currentFrameElement = m_swapchain->getCurrentFrame();
@@ -467,10 +461,7 @@ void VulkanRenderer::draw_scene(
     const uint32_t objectsToDraw = updateObjectsBuffer(
         currentImageElement->commandBuffer,
         imageIndex,
-        camera,
-        map,
-        world,
-        atlasEntries);
+        camera);
 
     VkCommandBufferBeginInfo beginInfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;

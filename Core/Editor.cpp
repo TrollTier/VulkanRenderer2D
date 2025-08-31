@@ -184,7 +184,7 @@ void Editor::RunLoop()
 
 		updateUI();
     	ImDrawData* uiData = ImGui::GetDrawData();
-    	m_renderer->draw_scene(*m_camera, *m_map, *m_world, m_atlasEntries, uiData);
+    	m_renderer->drawScene(*m_camera, uiData);
 
         const auto endOfRender = std::chrono::high_resolution_clock::now();
 
