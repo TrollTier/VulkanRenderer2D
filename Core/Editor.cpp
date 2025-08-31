@@ -287,9 +287,7 @@ void Editor::setSelectedTile()
 		return;
 	}
 
-	double xpos, ypos;
-	glfwGetCursorPos(m_window, &xpos, &ypos);
-	const auto worldPos = screenToWorld({xpos, ypos});
+	const auto worldPos = mouseToWorld();
 
 	if (worldPos.x < 0 || worldPos.y < 0)
 	{
@@ -341,6 +339,30 @@ void Editor::drawMap()
 
 		m_renderer->drawSprite(worldPosition, scale, gameObject.getSprite());
 	}
+
+	if (m_selectedTileType > 0)
+	{
+		const auto& type = TileTypes[m_selectedTileType];
+		size_t atlasTextureIndex = -1;
+		bool textureIndexFound = false;
+
+		for (size_t i = 0; i < m_atlasEntries.size() && !textureIndexFound; i++)
+		{
+			if (m_atlasEntries[i].id == type.textureAtlasEntryId)
+			{
+				atlasTextureIndex = i;
+				textureIndexFound = true;
+			}
+		}
+
+		if (!textureIndexFound)
+		{
+			return;
+		}
+
+		const auto mouseInWorld = mouseToWorld();
+		m_renderer->drawSprite(mouseInWorld, scale, {.textureIndex = atlasTextureIndex, .currentFrame = 0});
+	}
 }
 
 
@@ -352,6 +374,15 @@ glm::vec2 Editor::screenToWorld(const glm::vec2& screenPos) const
 
 	return { x, y };
 }
+
+glm::vec3 Editor::mouseToWorld() const
+{
+	double xpos, ypos;
+	glfwGetCursorPos(m_window, &xpos, &ypos);
+
+	return glm::vec3(screenToWorld({xpos, ypos}), 0);
+}
+
 
 void Editor::mouseButtonCallback(int button, int action, int mods)
 {

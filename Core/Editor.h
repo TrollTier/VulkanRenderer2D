@@ -50,6 +50,7 @@ private:
     void drawMap();
 
     [[nodiscard]] glm::vec2 screenToWorld(const glm::vec2& screenPos) const;
+    [[nodiscard]] glm::vec3 mouseToWorld() const;
 
     void handleKeyInput(const Timestep& timestep);
     static void glfwMouseButtonHandler(GLFWwindow* window, int button, int action, int mods);
