@@ -301,7 +301,7 @@ void Editor::setSelectedTile()
 	{
 		auto& tile = m_map->getTileAt(tileColumn, tileRow);
 		tile.tileDataIndex = static_cast<size_t>(m_selectedTileType);
-		tile.sprite.textureIndex = static_cast<size_t>(atlasTextureIndex);
+		tile.sprite.textureIndex = atlasTextureIndex;
 		tile.sprite.currentFrame = type.frameIndex;
 	}
 }
