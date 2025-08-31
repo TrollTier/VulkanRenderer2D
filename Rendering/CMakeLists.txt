@@ -18,6 +18,7 @@ add_library(Rendering
         CameraUniformData.h
         Buffer.cpp
         Buffer.h
+        ImageRect.h
 )
 
 target_link_libraries(Rendering PRIVATE Vulkan::Vulkan glfw ImGui)

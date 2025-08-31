@@ -34,7 +34,7 @@ Texture2D::Texture2D(
     m_vulkanResources = std::move(vulkanResources);
 
     const ImageInfo imageInfo = ImageLoader::loadImage(assetsBasePath / spriteInfo.filePath);
-    VkDeviceSize imageSize = imageInfo.width * imageInfo.height * 4;
+    const VkDeviceSize imageSize = imageInfo.width * imageInfo.height * 4;
 
     createImage(
         imageInfo.width,
@@ -85,6 +85,21 @@ Texture2D::Texture2D(
     viewInfo.subresourceRange.levelCount = 1;
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = 1;
+
+    m_frames.reserve(spriteInfo.frames.size());
+
+    for (size_t i = 0; i < spriteInfo.frames.size(); i++)
+    {
+        const auto& frame = spriteInfo.frames[i];
+
+        m_frames[i] =
+        {
+            .translateX = static_cast<float>(frame.x) / static_cast<float>(m_textureWidth),
+            .translateY = static_cast<float>(frame.y) / static_cast<float>(m_textureHeight),
+            .scaleX = static_cast<float>(frame.x + frame.width) / static_cast<float>(m_textureWidth),
+            .scaleY = static_cast<float>(frame.y + frame.height) / static_cast<float>(m_textureHeight)
+        };
+    }
 
     if (m_vulkanResources.expired())
     {

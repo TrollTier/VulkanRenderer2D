@@ -7,13 +7,7 @@
 
 #include <glm/glm.hpp>
 
-typedef struct
-{
-    float translateX;
-    float translateY;
-    float scaleX;
-    float scaleY;
-} ImageRect;
+#include "ImageRect.h"
 
 struct InstanceData {
     glm::mat4 modelMatrix;  // 64 bytes  64

@@ -45,8 +45,21 @@ public:
     }
 
     void setPixelsPerUnit(uint32_t pixelsPerUnit) { m_pixelsPerUnit = pixelsPerUnit; }
+    void drawSprite(
+        glm::vec3& worldPosition,
+        glm::vec3& scale,
+        Sprite& sprite);
 
 private:
+    typedef struct
+    {
+        glm::vec3 worldPosition;
+        glm::vec3 scale;
+        size_t meshIndex;
+        size_t textureIndex;
+        size_t frameIndex;
+    } DrawParameters;
+
     uint32_t m_pixelsPerUnit = 1;
     std::filesystem::path m_assetsBasePath;
     std::vector<VkDescriptorSet> m_defaultDescriptorSets;
@@ -67,6 +80,8 @@ private:
     std::vector<VkDescriptorSet> m_objectBufferDescriptors{};
 
     VkSampler m_sampler = VK_NULL_HANDLE;
+
+    std::vector<DrawParameters> m_drawParameters{10000};
 
     void initializeSampler();
     void initializeDefaultMeshes();

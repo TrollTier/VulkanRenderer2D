@@ -314,6 +314,21 @@ void VulkanRenderer::initializeSampler()
     }
 }
 
+void VulkanRenderer::drawSprite(glm::vec3 &worldPosition, glm::vec3 &scale, Sprite &sprite)
+{
+    const DrawParameters params
+    {
+        .worldPosition = worldPosition,
+        .scale = scale,
+        .meshIndex =  0,
+        .textureIndex = sprite.textureIndex,
+        .frameIndex =  sprite.currentFrame,
+    };
+
+    m_drawParameters[m_drawParameters.size()] = params;
+}
+
+
 void VulkanRenderer::updateCamera(const Camera& camera, size_t imageIndex)
 {
     const auto constants = CameraUniformData
@@ -362,15 +377,7 @@ uint32_t VulkanRenderer::updateObjectsBuffer(
             continue;
         }
 
-        const auto& spriteFrame = atlasEntries[tile.sprite.textureIndex].frames[tile.sprite.currentFrame];
         const auto& texture = *m_textures[tile.sprite.textureIndex];
-
-        const float u0 = static_cast<float>(spriteFrame.x) / static_cast<float>(texture.getWidth());
-        const float v0 = static_cast<float>(spriteFrame.y) / static_cast<float>(texture.getHeight());
-        const float u1 = static_cast<float>(spriteFrame.x + spriteFrame.width) / static_cast<float>(texture.getWidth());
-        const float v1 = static_cast<float>(spriteFrame.y + spriteFrame.height) / static_cast<float>(texture.getHeight());
-
-        ImageRect gpuFrame { u0, v0, u1 - u0, v1 - v0 };
 
         const glm::vec3 screenPosition = glm::vec3(
             (static_cast<float>(tile.column) - offsetX) * static_cast<float>(m_pixelsPerUnit),
@@ -380,7 +387,7 @@ uint32_t VulkanRenderer::updateObjectsBuffer(
         objectSSBO[objectsToDraw].modelMatrix =
             glm::translate(glm::mat4(1.0f), screenPosition) *
             glm::scale(glm::mat4(1), glm::vec3(m_pixelsPerUnit, m_pixelsPerUnit, 1.0f));
-        objectSSBO[objectsToDraw].spriteFrame = gpuFrame;
+        objectSSBO[objectsToDraw].spriteFrame = texture.getFrame(tile.sprite.currentFrame);
         objectSSBO[objectsToDraw].textureIndex = tile.sprite.textureIndex;
 
         objectsToDraw++;
@@ -396,9 +403,12 @@ uint32_t VulkanRenderer::updateObjectsBuffer(
             continue;
         }
 
+        const auto& texture = *m_textures[gameObject.getSprite().textureIndex];
+
         objectSSBO[objectsToDraw].modelMatrix =
             glm::translate(glm::mat4(1.0f), gameObject.getWorldPosition()) *
             glm::scale(glm::mat4(1), glm::vec3(m_pixelsPerUnit, m_pixelsPerUnit, 1.0f));
+        objectSSBO[objectsToDraw].spriteFrame = texture.getFrame(gameObject.getSprite().currentFrame);
         objectSSBO[objectsToDraw].textureIndex = gameObject.getSprite().textureIndex;
 
         objectsToDraw++;
@@ -424,7 +434,6 @@ uint32_t VulkanRenderer::updateObjectsBuffer(
 
     return objectsToDraw;
 }
-
 
 void VulkanRenderer::draw_scene(
     const Camera& camera,
@@ -627,6 +636,7 @@ void VulkanRenderer::draw_scene(
     }
 
     m_swapchain->moveToNextFrame();
+    m_drawParameters.clear();
 }
 
 void VulkanRenderer::imageToAttachmentLayout(SwapchainElement *element)
