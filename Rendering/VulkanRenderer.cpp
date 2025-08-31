@@ -30,6 +30,7 @@ VulkanRenderer::VulkanRenderer(
     m_assetsBasePath = assetsBasePath;
     m_vulkanResources = resources;
     m_pixelsPerUnit = pixelsPerUnit;
+    m_drawParameters.clear();
 }
 
 VulkanRenderer::~VulkanRenderer()
@@ -314,7 +315,10 @@ void VulkanRenderer::initializeSampler()
     }
 }
 
-void VulkanRenderer::drawSprite(glm::vec3 &worldPosition, glm::vec3 &scale, Sprite &sprite)
+void VulkanRenderer::drawSprite(
+    const glm::vec3 &worldPosition,
+    const glm::vec3 &scale,
+    const Sprite& sprite)
 {
     const DrawParameters params
     {
@@ -325,7 +329,7 @@ void VulkanRenderer::drawSprite(glm::vec3 &worldPosition, glm::vec3 &scale, Spri
         .frameIndex =  sprite.currentFrame,
     };
 
-    m_drawParameters[m_drawParameters.size()] = params;
+    m_drawParameters.emplace_back(params);
 }
 
 
@@ -357,65 +361,31 @@ uint32_t VulkanRenderer::updateObjectsBuffer(
 
     const auto& objectBuffer = m_objectBuffers[imageIndex];
 
-    const auto& tiles = map.getTiles();
-    const auto& gameObjects = world.getGameObjects();
-
     const auto& stagingBuffer = *m_objectStagingBuffers[imageIndex];
     const auto objectSSBO = (InstanceData*)stagingBuffer.mapMemory(stagingBuffer.getSize());
 
-    uint32_t objectsToDraw = 0;
     const auto& frustum = camera.getFrustum();
+    const auto offset = glm::vec3(frustum.x, frustum.y, 0);
 
-    const auto offsetX = frustum.x;
-    const auto offsetY = frustum.y;
-
-    for (auto tile : tiles)
+    for (size_t i = 0; i < m_drawParameters.size(); i++)
     {
-        if (static_cast<float>(tile.column + 1) < frustum.x || static_cast<float>(tile.column) > frustum.toX ||
-            static_cast<float>(tile.row + 1) < frustum.y || static_cast<float>(tile.row) > frustum.toY)
-        {
-            continue;
-        }
+        const auto& drawParameter = m_drawParameters[i];
 
-        const auto& texture = *m_textures[tile.sprite.textureIndex];
-
+        const auto& texture = *m_textures[drawParameter.textureIndex];
         const glm::vec3 screenPosition = glm::vec3(
-            (static_cast<float>(tile.column) - offsetX) * static_cast<float>(m_pixelsPerUnit),
-            (static_cast<float>(tile.row) - offsetY) * static_cast<float>(m_pixelsPerUnit),
-            0);
+             (static_cast<float>(drawParameter.worldPosition.x) - offset.x) * static_cast<float>(m_pixelsPerUnit),
+             (static_cast<float>(drawParameter.worldPosition.y) - offset.y) * static_cast<float>(m_pixelsPerUnit),
+             drawParameter.worldPosition.z);
 
-        objectSSBO[objectsToDraw].modelMatrix =
+        objectSSBO[i].modelMatrix =
             glm::translate(glm::mat4(1.0f), screenPosition) *
-            glm::scale(glm::mat4(1), glm::vec3(m_pixelsPerUnit, m_pixelsPerUnit, 1.0f));
-        objectSSBO[objectsToDraw].spriteFrame = texture.getFrame(tile.sprite.currentFrame);
-        objectSSBO[objectsToDraw].textureIndex = tile.sprite.textureIndex;
-
-        objectsToDraw++;
-    }
-
-    for (auto gameObject : gameObjects)
-    {
-        const auto worldPosition = gameObject.getWorldPosition();
-
-        if ((worldPosition.x + 1) < frustum.x || worldPosition.x > frustum.toX ||
-            (worldPosition.y + 1) < frustum.y || worldPosition.y > frustum.toY)
-        {
-            continue;
-        }
-
-        const auto& texture = *m_textures[gameObject.getSprite().textureIndex];
-
-        objectSSBO[objectsToDraw].modelMatrix =
-            glm::translate(glm::mat4(1.0f), gameObject.getWorldPosition()) *
-            glm::scale(glm::mat4(1), glm::vec3(m_pixelsPerUnit, m_pixelsPerUnit, 1.0f));
-        objectSSBO[objectsToDraw].spriteFrame = texture.getFrame(gameObject.getSprite().currentFrame);
-        objectSSBO[objectsToDraw].textureIndex = gameObject.getSprite().textureIndex;
-
-        objectsToDraw++;
+            glm::scale(glm::mat4(1), drawParameter.scale);
+        objectSSBO[i].spriteFrame = texture.getFrame(drawParameter.frameIndex);
+        objectSSBO[i].textureIndex = drawParameter.textureIndex;
     }
 
     stagingBuffer.unmapMemory();
-    const auto stagingBufferSize = sizeof(InstanceData) * objectsToDraw;
+    const auto stagingBufferSize = sizeof(InstanceData) * m_drawParameters.size();
 
     VkBufferCopy copyRegion{};
     copyRegion.srcOffset = 0;
@@ -432,7 +402,7 @@ uint32_t VulkanRenderer::updateObjectsBuffer(
     vkQueueSubmit(m_vulkanResources->m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(m_vulkanResources->m_graphicsQueue);
 
-    return objectsToDraw;
+    return m_drawParameters.size();
 }
 
 void VulkanRenderer::draw_scene(

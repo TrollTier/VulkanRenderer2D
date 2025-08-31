@@ -47,6 +47,7 @@ private:
     void updateAnimations(const Timestep& step);
     void updateUI();
     void setSelectedTile();
+    void drawMap();
 
     [[nodiscard]] glm::vec2 screenToWorld(const glm::vec2& screenPos) const;
 

@@ -180,6 +180,8 @@ void Editor::RunLoop()
 
         const auto startOfRender = std::chrono::high_resolution_clock::now();
 
+		drawMap();
+
 		updateUI();
     	ImDrawData* uiData = ImGui::GetDrawData();
     	m_renderer->draw_scene(*m_camera, *m_map, *m_world, m_atlasEntries, uiData);
@@ -306,6 +308,42 @@ void Editor::setSelectedTile()
 	}
 }
 
+void Editor::drawMap()
+{
+	const auto& frustum = m_camera->getFrustum();
+
+	const auto& tiles = m_map->getTiles();
+	const auto& gameObjects = m_world->getGameObjects();
+
+	const glm::vec3 scale{PIXELS_PER_UNIT, PIXELS_PER_UNIT, 1 };
+
+	for (auto tile : tiles)
+	{
+		if (static_cast<float>(tile.column + 1) < frustum.x || static_cast<float>(tile.column) > frustum.toX ||
+			static_cast<float>(tile.row + 1) < frustum.y || static_cast<float>(tile.row) > frustum.toY)
+		{
+			continue;
+		}
+
+		const glm::vec3 worldPos = glm::vec3(tile.column, tile.row, 1);
+		m_renderer->drawSprite(worldPos, scale, tile.sprite);
+	}
+
+	for (auto gameObject : gameObjects)
+	{
+		const auto worldPosition = gameObject.getWorldPosition();
+
+		if ((worldPosition.x + 1) < frustum.x || worldPosition.x > frustum.toX ||
+			(worldPosition.y + 1) < frustum.y || worldPosition.y > frustum.toY)
+		{
+			continue;
+		}
+
+		m_renderer->drawSprite(worldPosition, scale, gameObject.getSprite());
+	}
+}
+
+
 glm::vec2 Editor::screenToWorld(const glm::vec2& screenPos) const
 {
 	const auto& frustum = m_camera->getFrustum();
@@ -400,7 +438,6 @@ void Editor::glfwScrollCallback(GLFWwindow *window, double xoffset, double yoffs
 	game->scrollCallback(xoffset, yoffset);
 }
 
-
 void Editor::handleWindowResize()
 {
 	const auto windowExtent = m_vulkanWindow->getWindowExtent();
@@ -419,7 +456,6 @@ void Editor::handleWindowResize()
 		windowExtent.width,
 		windowExtent.height);
 }
-
 
 void Editor::glfwWindowResize(GLFWwindow* window, int width, int height)
 {

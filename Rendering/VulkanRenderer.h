@@ -46,9 +46,9 @@ public:
 
     void setPixelsPerUnit(uint32_t pixelsPerUnit) { m_pixelsPerUnit = pixelsPerUnit; }
     void drawSprite(
-        glm::vec3& worldPosition,
-        glm::vec3& scale,
-        Sprite& sprite);
+        const glm::vec3 &worldPosition,
+        const glm::vec3 &scale,
+        const Sprite& sprite);
 
 private:
     typedef struct
@@ -82,6 +82,7 @@ private:
     VkSampler m_sampler = VK_NULL_HANDLE;
 
     std::vector<DrawParameters> m_drawParameters{10000};
+    size_t m_currentDrawIndex = 0;
 
     void initializeSampler();
     void initializeDefaultMeshes();
