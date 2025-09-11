@@ -40,7 +40,9 @@ private:
     VkDescriptorPool m_imGuiPool = VK_NULL_HANDLE;
 
     int32_t m_selectedTileType = -1;
-    bool m_runAnimations = true;
+    uint16_t m_selectedFrame = 0;
+
+    bool m_runAnimations = false;
     bool m_showImGui = true;
 
     void initImGui();

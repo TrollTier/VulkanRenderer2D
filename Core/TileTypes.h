@@ -8,7 +8,7 @@
 #include <array>
 #include "Tile.h"
 
-constexpr std::array<TileData, 2> TileTypes
+constexpr std::array<TileData, 4> TileTypes
 {
     {
 
@@ -19,6 +19,14 @@ constexpr std::array<TileData, 2> TileTypes
         {
             .tileName = "wood_1",
             .textureAtlasEntryId = 4
+        },
+        {
+            .tileName = "ground_1",
+            .textureAtlasEntryId = 7
+        },
+        {
+            .tileName = "gravel_1",
+            .textureAtlasEntryId = 8
         }
     }
 };

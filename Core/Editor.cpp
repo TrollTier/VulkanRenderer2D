@@ -231,7 +231,8 @@ void Editor::updateUI()
 	ImGui::NewFrame();
 
 	ImGui::Begin("Stats", &m_showImGui, ImGuiWindowFlags_AlwaysAutoResize);
-	ImGui::Text("This is some useful text.");
+	ImGui::Text("Selected tile: %d", m_selectedTileType);
+	ImGui::Text("Selected tile frame: %d", m_selectedFrame);
 
 	if (ImGui::Button("Save"))
 	{
@@ -248,6 +249,7 @@ void Editor::updateUI()
 		if (ImGui::Button(TileTypes[i].tileName.data()))
 		{
 			m_selectedTileType = static_cast<int32_t>(i);
+			m_selectedFrame = 0;
 		}
 	}
 
@@ -257,7 +259,7 @@ void Editor::updateUI()
 
 void Editor::setSelectedTile()
 {
-	if (m_selectedTileType < 0 || ImGui::IsWindowHovered((ImGuiHoveredFlags_AnyWindow)))
+	if (m_selectedTileType < 0 || m_selectedFrame < 0 || ImGui::IsWindowHovered((ImGuiHoveredFlags_AnyWindow)))
 	{
 		return;
 	}
@@ -302,7 +304,7 @@ void Editor::setSelectedTile()
 		auto& tile = m_map->getTileAt(tileColumn, tileRow);
 		tile.tileDataIndex = static_cast<size_t>(m_selectedTileType);
 		tile.sprite.textureIndex = atlasTextureIndex;
-		tile.sprite.currentFrame = type.frameIndex;
+		tile.sprite.currentFrame = static_cast<size_t>(m_selectedFrame);
 	}
 }
 
@@ -361,7 +363,13 @@ void Editor::drawMap()
 		}
 
 		const auto mouseInWorld = mouseToWorld();
-		m_renderer->drawSprite(mouseInWorld, scale, {.textureIndex = atlasTextureIndex, .currentFrame = 0});
+		m_renderer->drawSprite(
+			mouseInWorld,
+			scale,
+			{
+				.textureIndex = atlasTextureIndex,
+				.currentFrame = m_selectedFrame
+			});
 	}
 }
 
@@ -392,6 +400,18 @@ void Editor::mouseButtonCallback(int button, int action, int mods)
 
 void Editor::handleKeyInput(const Timestep& timestep)
 {
+	static float secondsSinceLastFrameChange = 0.0f;
+	secondsSinceLastFrameChange += timestep.deltaSeconds;
+
+	if (m_selectedTileType > 0 && glfwGetKey(m_window, GLFW_KEY_KP_ADD) == GLFW_PRESS && secondsSinceLastFrameChange > 0.1)
+	{
+		const auto& type = TileTypes[m_selectedTileType];
+		const auto& atlasEntry = m_atlasEntries[type.textureAtlasEntryId - 1];
+		m_selectedFrame = static_cast<uint16_t>((m_selectedFrame + 1) % atlasEntry.frames.size());
+
+		secondsSinceLastFrameChange = 0.0f;
+	}
+
     glm::vec3 cameraMovement(0.0f, 0.0f, 0.0f);
 
     int state = glfwGetKey(m_window, GLFW_KEY_W);

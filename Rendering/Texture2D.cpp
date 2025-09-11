@@ -96,8 +96,8 @@ Texture2D::Texture2D(
         {
             .translateX = static_cast<float>(frame.x) / static_cast<float>(m_textureWidth),
             .translateY = static_cast<float>(frame.y) / static_cast<float>(m_textureHeight),
-            .scaleX = static_cast<float>(frame.x + frame.width) / static_cast<float>(m_textureWidth),
-            .scaleY = static_cast<float>(frame.y + frame.height) / static_cast<float>(m_textureHeight)
+            .scaleX = static_cast<float>(frame.width) / static_cast<float>(m_textureWidth),
+            .scaleY = static_cast<float>(frame.height) / static_cast<float>(m_textureHeight)
         };
     }
 
