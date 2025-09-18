@@ -1,4 +1,4 @@
-# Format of this file: texture id;texture path in assets folder;number of frames;frame id 1;x1;y1;width1;height1;frame id 2;x2;y2;width2;height2;....
+# Format of this file: texture id;texture path in assets folder;number of frames;zero based frame id 1;x1;y1;width1;height1;frame id 2;x2;y2;width2;height2;....
 1;Textures/default_texture.jpg;1;0;0;0;256;256
 2;Textures/Flame.png;1;0;0;0;1024;1024
 3;Textures/texture.jpg;1;0;0;0;960;720
@@ -7,3 +7,4 @@
 6;Textures/spritesheet.png;4;0;0;0;128;128;1;128;0;128;128;2;0;128;128;128;3;128;128;128;128
 7;Textures/ground_1.png;1;0;0;0;64;64
 8;Textures/gravel_road.png;16;0;0;0;64;64;1;64;0;64;64;2;128;0;64;64;3;192;0;64;64;4;0;64;64;64;5;64;64;64;64;6;128;64;64;64;7;192;64;64;64;8;0;128;64;64;9;64;128;64;64;10;128;128;64;64;11;192;128;64;64;12;0;192;64;64;13;64;192;64;64;14;128;192;64;64;15;192;192;64;64
+9;Sprites/chest.png;2;0;0;0;64;64;1;64;0;64;64

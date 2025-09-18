@@ -4,12 +4,18 @@
 
 #include "GameObject.h"
 
-GameObject::GameObject(size_t index, glm::vec3 worldPosition, size_t meshHandle, Sprite sprite)
+GameObject::GameObject(
+    size_t index,
+    glm::vec3 worldPosition,
+    size_t meshHandle,
+    Sprite sprite,
+    std::optional<size_t> animatorIndex)
 {
     m_worldPosition = worldPosition;
     m_meshHandle = meshHandle;
     m_index = index;
     m_sprite = sprite;
+    m_animatorIndex = animatorIndex;
 }
 
 
@@ -28,7 +34,12 @@ size_t GameObject::getIndex() const
     return m_index;
 }
 
-const Sprite &GameObject::getSprite() const
+const Sprite& GameObject::getSprite() const
 {
     return m_sprite;
+}
+
+const std::optional<size_t> GameObject::getAnimatorIndex() const
+{
+    return m_animatorIndex;
 }

@@ -67,6 +67,27 @@ Editor::Editor()
 	}
 
     m_world = std::make_unique<World>();
+
+	auto& animationSystem = m_world->getAnimationSystem();
+	animationSystem.addAnimationData(
+	{
+		.name = "open_treasure",
+		.keyFrames =
+		{
+			KeyFrame{.afterFrames = 0, .frame = 0 },
+			KeyFrame{.afterFrames = 1000, .frame = 1 },
+			KeyFrame{.afterFrames = 1000, .frame = 0 }
+		},
+		.loops = true
+	});
+	animationSystem.addAnimator(Animator(&animationSystem.getAnimationDataByName("open_treasure")));
+
+	m_world->addGameObject(
+			{ 30, 30, 1},
+			0,
+			Sprite{.textureIndex = 8},
+			0);
+
     m_map = std::make_unique<Map>(50, 50, 1);
 
     const auto windowExtent = m_vulkanWindow->getWindowExtent();
@@ -203,19 +224,12 @@ void Editor::RunLoop()
 
 void Editor::updateAnimations(const Timestep &step)
 {
-	static float timeSinceLastUpdateLoop = 0;
-
 	if (!m_runAnimations)
 	{
 		return;
 	}
 
-	timeSinceLastUpdateLoop += step.deltaMilliseconds;
-
-	if (timeSinceLastUpdateLoop >= 100)
-	{
-		timeSinceLastUpdateLoop = 0;
-	}
+	m_world->getAnimationSystem().update(step);
 }
 
 void Editor::updateUI()
@@ -335,7 +349,7 @@ void Editor::drawMap()
 
 	const glm::vec3 scale{PIXELS_PER_UNIT, PIXELS_PER_UNIT, 1 };
 
-	for (auto tile : tiles)
+	for (const auto& tile : tiles)
 	{
 		if (static_cast<float>(tile.column + 1) < frustum.x || static_cast<float>(tile.column) > frustum.toX ||
 			static_cast<float>(tile.row + 1) < frustum.y || static_cast<float>(tile.row) > frustum.toY)
@@ -351,7 +365,7 @@ void Editor::drawMap()
 		}
 	}
 
-	for (auto gameObject : gameObjects)
+	for (const auto& gameObject : gameObjects)
 	{
 		const auto worldPosition = gameObject.getWorldPosition();
 
@@ -361,7 +375,23 @@ void Editor::drawMap()
 			continue;
 		}
 
-		m_renderer->drawSprite(worldPosition, scale, gameObject.getSprite());
+		if (gameObject.getAnimatorIndex().has_value())
+		{
+			const auto animatorIndex = gameObject.getAnimatorIndex().value();
+			const auto animator = m_world->getAnimationSystem().getAnimator(animatorIndex);
+
+			const Sprite sprite = Sprite
+			{
+				.textureIndex = gameObject.getSprite().textureIndex,
+				.currentFrame = animator.m_animationData->keyFrames[animator.m_currentKeyFrame].frame
+			};
+
+			m_renderer->drawSprite(worldPosition, scale, sprite);
+		}
+		else
+		{
+			m_renderer->drawSprite(worldPosition, scale, gameObject.getSprite());
+		}
 	}
 
 	if (m_selectedTileType > 0)

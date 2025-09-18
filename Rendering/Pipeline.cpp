@@ -216,7 +216,7 @@ void Pipeline::initializeDescriptorSetLayout()
 
     VkDescriptorSetLayoutBinding samplerBinding{};
     samplerBinding.binding = 1;
-    samplerBinding.descriptorCount = 8;
+    samplerBinding.descriptorCount = 9;
     samplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     samplerBinding.pImmutableSamplers = nullptr;
     samplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
