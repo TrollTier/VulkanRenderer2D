@@ -67,6 +67,50 @@ size_t Map::getRows() const
     return m_rows;
 }
 
+void Map::setTileAt(uint16_t column, uint16_t row, uint8_t layer, size_t tileDataIndex, size_t textureIndex, uint16_t frame)
+{
+    if (!isInMap(column, row))
+    {
+        return;
+    }
+
+    auto& tile = getTileAt(column, row);
+
+    for (int i = 0; i < tile.tileLayers.size(); i++)
+    {
+        auto& tileLayer = tile.tileLayers[i];
+
+        if (tileLayer.layer == layer)
+        {
+            tileLayer.tileDataIndex = tileDataIndex;
+            tileLayer.sprite.textureIndex = textureIndex;
+            tileLayer.sprite.currentFrame = frame;
+
+            return;
+        }
+
+        if (tileLayer.layer > layer)
+        {
+            tile.tileLayers.insert(
+                tile.tileLayers.begin() + i,
+                TileLayer
+                {
+                    .layer = layer,
+                    .tileDataIndex = tileDataIndex,
+                    .sprite = Sprite{ .textureIndex = textureIndex, .currentFrame = frame }
+                });
+
+            return;
+        }
+    }
+
+    tile.tileLayers.emplace_back(
+        layer,
+        tileDataIndex,
+        Sprite{ .textureIndex = textureIndex, .currentFrame = frame });
+}
+
+
 
 
 

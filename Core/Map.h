@@ -32,6 +32,7 @@ public:
     [[nodiscard]] size_t getTileSize() const;
     [[nodiscard]] size_t getRows() const;
     [[nodiscard]] size_t getColumns() const;
+    void setTileAt(uint16_t column, uint16_t row, uint8_t layer, size_t tileDataIndex, size_t textureIndex, uint16_t frame);
 
 private:
     uint16_t m_rows = 0;

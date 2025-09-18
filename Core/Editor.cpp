@@ -214,12 +214,6 @@ void Editor::updateAnimations(const Timestep &step)
 
 	if (timeSinceLastUpdateLoop >= 100)
 	{
-		for (auto& tile : m_map->getTiles())
-		{
-			const auto& atlasEntry = m_atlasEntries[tile.sprite.textureIndex];
-			tile.sprite.currentFrame = (tile.sprite.currentFrame + 1) % atlasEntry.frames.size();
-		}
-
 		timeSinceLastUpdateLoop = 0;
 	}
 }
@@ -233,6 +227,7 @@ void Editor::updateUI()
 	ImGui::Begin("Stats", &m_showImGui, ImGuiWindowFlags_AlwaysAutoResize);
 	ImGui::Text("Selected tile: %d", m_selectedTileType);
 	ImGui::Text("Selected tile frame: %d", m_selectedFrame);
+	ImGui::Text("Selected layer: %d", m_selectedLayer);
 
 	if (ImGui::Button("Save"))
 	{
@@ -242,6 +237,29 @@ void Editor::updateUI()
 	if (ImGui::Button("Animations"))
 	{
 		m_runAnimations = !m_runAnimations;
+	}
+
+	if (ImGui::Button("Layer 1"))
+	{
+		m_selectedLayer = 0;
+	}
+
+	for (uint8_t i = 1; i < m_layerCount; i++)
+	{
+		ImGui::SameLine();
+
+		if (ImGui::Button("Layer " + (i + 1)))
+		{
+			m_selectedLayer = i;
+		}
+	}
+
+	ImGui::SameLine();
+
+	if (ImGui::Button("Add layer") && m_layerCount < UINT8_MAX - 1)
+	{
+		m_layerCount += 1;
+		m_selectedLayer = m_layerCount - 1;
 	}
 
 	for (size_t i = 0; i < TileTypes.size(); i++)
@@ -299,13 +317,13 @@ void Editor::setSelectedTile()
 	const auto tileRow = static_cast<int16_t>(std::floor(worldPos.y));
 	const auto tileColumn = static_cast<int16_t>(std::floor(worldPos.x));
 
-	if (m_map->isInMap(tileColumn, tileRow))
-	{
-		auto& tile = m_map->getTileAt(tileColumn, tileRow);
-		tile.tileDataIndex = static_cast<size_t>(m_selectedTileType);
-		tile.sprite.textureIndex = atlasTextureIndex;
-		tile.sprite.currentFrame = static_cast<size_t>(m_selectedFrame);
-	}
+	m_map->setTileAt(
+		tileColumn,
+		tileRow,
+		m_selectedLayer,
+		static_cast<size_t>(m_selectedTileType),
+		atlasTextureIndex,
+		m_selectedFrame);
 }
 
 void Editor::drawMap()
@@ -326,7 +344,11 @@ void Editor::drawMap()
 		}
 
 		const glm::vec3 worldPos = glm::vec3(tile.column, tile.row, 1);
-		m_renderer->drawSprite(worldPos, scale, tile.sprite);
+
+		for (const auto& layer : tile.tileLayers)
+		{
+			m_renderer->drawSprite(worldPos, scale, layer.sprite);
+		}
 	}
 
 	for (auto gameObject : gameObjects)

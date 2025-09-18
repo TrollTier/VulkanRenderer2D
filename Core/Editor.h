@@ -42,6 +42,9 @@ private:
     int32_t m_selectedTileType = -1;
     uint16_t m_selectedFrame = 0;
 
+    uint8_t m_layerCount = 1;
+    uint8_t m_selectedLayer = 0;
+
     bool m_runAnimations = false;
     bool m_showImGui = true;
 

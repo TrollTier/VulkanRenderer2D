@@ -6,6 +6,7 @@
 #define TILE_H
 
 #include <string>
+#include <vector>
 #include "Sprite.h"
 
 typedef struct
@@ -18,10 +19,16 @@ typedef struct
 
 typedef struct
 {
+    uint8_t layer{};
+    mutable size_t tileDataIndex{};
+    Sprite sprite{};
+} TileLayer;
+
+typedef struct
+{
     size_t row{};
     size_t column{};
-    size_t tileDataIndex{};
-    Sprite sprite{};
+    std::vector<TileLayer> tileLayers{1};
 } Tile;
 
 #endif //TILE_H
