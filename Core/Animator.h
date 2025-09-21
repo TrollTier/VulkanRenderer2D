@@ -13,11 +13,11 @@ public:
     size_t m_currentKeyFrame{};
     size_t m_ticksSinceLastUpdate{};
     size_t m_gameObjectIndex{};
-    const AnimationData* m_animationData = nullptr;
+    size_t m_animationDataIndex{};
 
-    explicit Animator(const AnimationData* animationData)
+    explicit Animator(const size_t animationDataIndex)
     {
-        m_animationData = animationData;
+        m_animationDataIndex = animationDataIndex;
     }
 };
 

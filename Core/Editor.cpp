@@ -80,13 +80,34 @@ Editor::Editor()
 		},
 		.loops = true
 	});
-	animationSystem.addAnimator(Animator(&animationSystem.getAnimationDataByName("open_treasure")));
+	animationSystem.addAnimator(Animator(animationSystem.getAnimationDataIndexByName("open_treasure")));
+
+	animationSystem.addAnimationData(
+	{
+		.name = "blob_idle",
+		.keyFrames =
+		{
+			KeyFrame{.afterFrames = 0, .frame = 0 },
+			KeyFrame{.afterFrames = 500, .frame = 1 },
+			KeyFrame{.afterFrames = 500, .frame = 2 },
+			KeyFrame{.afterFrames = 500, .frame = 3 },
+			KeyFrame{.afterFrames = 500, .frame = 0 },
+		},
+		.loops = true
+	});
+	animationSystem.addAnimator(Animator(animationSystem.getAnimationDataIndexByName("blob_idle")));
 
 	m_world->addGameObject(
 			{ 30, 30, 1},
 			0,
 			Sprite{.textureIndex = 8},
 			0);
+
+	m_world->addGameObject(
+		{ 29, 30, 1},
+		0,
+		Sprite{.textureIndex = 9},
+		1);
 
     m_map = std::make_unique<Map>(50, 50, 1);
 
@@ -202,8 +223,8 @@ void Editor::RunLoop()
         const auto startOfRender = std::chrono::high_resolution_clock::now();
 
 		drawMap();
-
 		updateUI();
+
     	ImDrawData* uiData = ImGui::GetDrawData();
     	m_renderer->drawScene(*m_camera, uiData);
 
@@ -378,12 +399,14 @@ void Editor::drawMap()
 		if (gameObject.getAnimatorIndex().has_value())
 		{
 			const auto animatorIndex = gameObject.getAnimatorIndex().value();
-			const auto animator = m_world->getAnimationSystem().getAnimator(animatorIndex);
+			const auto& animator = m_world->getAnimationSystem().getAnimator(animatorIndex);
+			const auto& animationData =
+				m_world->getAnimationSystem().getAnimationData(animatorIndex);
 
 			const Sprite sprite = Sprite
 			{
 				.textureIndex = gameObject.getSprite().textureIndex,
-				.currentFrame = animator.m_animationData->keyFrames[animator.m_currentKeyFrame].frame
+				.currentFrame = animationData->keyFrames[animator.m_currentKeyFrame].frame
 			};
 
 			m_renderer->drawSprite(worldPosition, scale, sprite);

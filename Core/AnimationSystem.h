@@ -18,8 +18,8 @@ public:
     void addAnimationData(AnimationData data);
     void addAnimator(Animator animator);
     void update(const Timestep& timestep);
-    [[nodiscard]] AnimationData& getAnimationDataByName(std::string name);
-    [[nodiscard]] const AnimationData& getAnimationDataByName(std::string name) const;
+    [[nodiscard]] const AnimationData* getAnimationData(const size_t index) const;
+    [[nodiscard]] size_t getAnimationDataIndexByName(const std::string_view& name) const;
     [[nodiscard]] const Animator& getAnimator(size_t index) const;
 
 private:

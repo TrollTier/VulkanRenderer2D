@@ -26,23 +26,20 @@ void AnimationSystem::update(const Timestep &timestep)
 {
     for (auto& animator : m_animators)
     {
-        if (animator.m_animationData == nullptr)
-        {
-            continue;
-        }
+        const auto& animationData = m_animationData[animator.m_animationDataIndex];
 
-        if (animator.m_currentKeyFrame == animator.m_animationData->keyFrames.size() - 1 &&
-            !animator.m_animationData->loops)
+        if (animator.m_currentKeyFrame == animationData.keyFrames.size() - 1 &&
+            !animationData.loops)
         {
             continue;
         }
 
         animator.m_ticksSinceLastUpdate += 1;
 
-        const auto& keyFrame = animator.m_animationData->keyFrames[animator.m_currentKeyFrame];
+        const auto& keyFrame = animationData.keyFrames[animator.m_currentKeyFrame];
 
-        size_t nextIndex = (animator.m_currentKeyFrame + 1) % animator.m_animationData->keyFrames.size();
-        const auto& nextKeyFrame = animator.m_animationData->keyFrames[nextIndex];
+        size_t nextIndex = (animator.m_currentKeyFrame + 1) % animationData.keyFrames.size();
+        const auto& nextKeyFrame = animationData.keyFrames[nextIndex];
 
         if (animator.m_ticksSinceLastUpdate >= nextKeyFrame.afterFrames)
         {
@@ -52,31 +49,24 @@ void AnimationSystem::update(const Timestep &timestep)
     }
 }
 
-AnimationData& AnimationSystem::getAnimationDataByName(std::string name)
+size_t AnimationSystem::getAnimationDataIndexByName(const std::string_view& name) const
 {
     for (size_t i = 0; i < m_animationData.size(); i++)
     {
         if (m_animationData[i].name == name)
         {
-            return m_animationData[i];
+            return i;
         }
     }
 
-    throw std::runtime_error("Could not find animation data");
+    return 0;
 }
 
-const AnimationData& AnimationSystem::getAnimationDataByName(std::string name) const
+const AnimationData* AnimationSystem::getAnimationData(const size_t index) const
 {
-    for (size_t i = 0; i < m_animationData.size(); i++)
-    {
-        if (m_animationData[i].name == name)
-        {
-            return m_animationData[i];
-        }
-    }
-
-    throw std::runtime_error("Could not find animation data");
+    return &m_animationData[index];
 }
+
 
 const Animator& AnimationSystem::getAnimator(size_t index) const
 {
