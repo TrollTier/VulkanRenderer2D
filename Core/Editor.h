@@ -17,6 +17,9 @@ class Editor
 {
 public:
     const float ZOOM_STEP_FACTOR = 1.1f;
+    const uint8_t FRAMES_PER_SECOND = 60;
+    const float SECONDS_PER_FRAME = 1.0f / (float)FRAMES_PER_SECOND;
+
     int32_t PIXELS_PER_UNIT = 64;
 
     Editor();

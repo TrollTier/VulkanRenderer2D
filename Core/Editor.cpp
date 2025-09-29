@@ -75,8 +75,8 @@ Editor::Editor()
 		.keyFrames =
 		{
 			KeyFrame{.afterFrames = 0, .frame = 0 },
-			KeyFrame{.afterFrames = 1000, .frame = 1 },
-			KeyFrame{.afterFrames = 1000, .frame = 0 }
+			KeyFrame{.afterFrames = 100, .frame = 1 },
+			KeyFrame{.afterFrames = 100, .frame = 0 }
 		},
 		.loops = true
 	});
@@ -88,10 +88,10 @@ Editor::Editor()
 		.keyFrames =
 		{
 			KeyFrame{.afterFrames = 0, .frame = 0 },
-			KeyFrame{.afterFrames = 500, .frame = 1 },
-			KeyFrame{.afterFrames = 500, .frame = 2 },
-			KeyFrame{.afterFrames = 500, .frame = 3 },
-			KeyFrame{.afterFrames = 500, .frame = 0 },
+			KeyFrame{.afterFrames = 120, .frame = 1 },
+			KeyFrame{.afterFrames = 120, .frame = 2 },
+			KeyFrame{.afterFrames = 120, .frame = 3 },
+			KeyFrame{.afterFrames = 120, .frame = 0 },
 		},
 		.loops = true
 	});
@@ -197,12 +197,13 @@ void Editor::initImGui()
 void Editor::RunLoop()
 {
     auto startOfLastUpdate = std::chrono::high_resolution_clock::now();
+	float secondsSinceLastUpdate = 0.0f;
 
 	while (!glfwWindowShouldClose(m_window))
     {
-        const auto startOfFrame = std::chrono::high_resolution_clock::now();
+		glfwPollEvents();
 
-        glfwPollEvents();
+        const auto startOfFrame = std::chrono::high_resolution_clock::now();
 
         auto startOfCurrentUpdate = std::chrono::high_resolution_clock::now();
         const std::chrono::duration<float, std::milli> durationSinceLastUpdate =
@@ -213,6 +214,14 @@ void Editor::RunLoop()
             durationSinceLastUpdate.count(),
             durationSinceLastUpdate.count() / 1000
         };
+
+		secondsSinceLastUpdate += step.deltaSeconds;
+		std::cout << "Seconds since last update: " << secondsSinceLastUpdate << std::endl;
+
+		if (secondsSinceLastUpdate < SECONDS_PER_FRAME)
+		{
+			continue;
+		}
 
         handleKeyInput(step);
     	updateAnimations(step);
@@ -236,6 +245,8 @@ void Editor::RunLoop()
 
         std::cout << "Frame:" << std::chrono::duration_cast<std::chrono::milliseconds>(frameDuration).count() << std::endl;
         std::cout << "Render:" << std::chrono::duration_cast<std::chrono::milliseconds>(renderDuration).count() << std::endl;
+
+		secondsSinceLastUpdate = 0.0f;
     }
 
 	vkDeviceWaitIdle(m_vulkanResources->m_logicalDevice);
