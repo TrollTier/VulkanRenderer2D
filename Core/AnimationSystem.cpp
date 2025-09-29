@@ -17,9 +17,6 @@ void AnimationSystem::addAnimationData(AnimationData data)
 
 void AnimationSystem::addAnimator(Animator animator)
 {
-    const auto& animationData = m_animationData[animator.m_animationDataIndex];
-    animator.m_nextKeyFrame = (animator.m_currentKeyFrame + 1) % animationData.keyFrames.size();
-
     m_animators.push_back(animator);
 }
 
@@ -37,16 +34,13 @@ void AnimationSystem::update(const Timestep &timestep)
 
         animator.m_ticksSinceLastUpdate += 1;
 
-        const auto& nextKeyFrame = animationData.keyFrames[animator.m_nextKeyFrame];
+        size_t nextIndex = (animator.m_currentKeyFrame + 1) % animationData.keyFrames.size();
+        const auto& nextKeyFrame = animationData.keyFrames[nextIndex];
 
         if (animator.m_ticksSinceLastUpdate >= nextKeyFrame.afterFrames)
         {
-            size_t nextFrame = (animator.m_currentKeyFrame + 1) % animationData.keyFrames.size();
-            size_t frameAfterNext = (animator.m_currentKeyFrame + 2) % animationData.keyFrames.size();
-
-            animator.m_currentKeyFrame = nextFrame;
+            animator.m_currentKeyFrame = nextIndex;
             animator.m_ticksSinceLastUpdate = 0;
-            animator.m_nextKeyFrame = frameAfterNext;
         }
     }
 }

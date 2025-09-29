@@ -88,10 +88,10 @@ Editor::Editor()
 		.keyFrames =
 		{
 			KeyFrame{.afterFrames = 0, .frame = 0 },
-			KeyFrame{.afterFrames = 120, .frame = 1 },
-			KeyFrame{.afterFrames = 120, .frame = 2 },
-			KeyFrame{.afterFrames = 120, .frame = 3 },
-			KeyFrame{.afterFrames = 120, .frame = 0 },
+			KeyFrame{.afterFrames = 30, .frame = 1 },
+			KeyFrame{.afterFrames = 30, .frame = 2 },
+			KeyFrame{.afterFrames = 30, .frame = 3 },
+			KeyFrame{.afterFrames = 30, .frame = 0 },
 		},
 		.loops = true
 	});
@@ -215,16 +215,17 @@ void Editor::RunLoop()
             durationSinceLastUpdate.count() / 1000
         };
 
+		startOfLastUpdate = startOfCurrentUpdate;
 		secondsSinceLastUpdate += step.deltaSeconds;
 		std::cout << "Seconds since last update: " << secondsSinceLastUpdate << std::endl;
 
-		if (secondsSinceLastUpdate < SECONDS_PER_FRAME)
+		if (secondsSinceLastUpdate >= SECONDS_PER_FRAME)
 		{
-			continue;
+			updateAnimations(step);
+			secondsSinceLastUpdate = 0.0f;
 		}
 
-        handleKeyInput(step);
-    	updateAnimations(step);
+		handleKeyInput(step);
 		setSelectedTile();
 
         startOfLastUpdate = startOfCurrentUpdate;
@@ -245,8 +246,6 @@ void Editor::RunLoop()
 
         std::cout << "Frame:" << std::chrono::duration_cast<std::chrono::milliseconds>(frameDuration).count() << std::endl;
         std::cout << "Render:" << std::chrono::duration_cast<std::chrono::milliseconds>(renderDuration).count() << std::endl;
-
-		secondsSinceLastUpdate = 0.0f;
     }
 
 	vkDeviceWaitIdle(m_vulkanResources->m_logicalDevice);
@@ -412,7 +411,7 @@ void Editor::drawMap()
 			const auto animatorIndex = gameObject.getAnimatorIndex().value();
 			const auto& animator = m_world->getAnimationSystem().getAnimator(animatorIndex);
 			const auto& animationData =
-				m_world->getAnimationSystem().getAnimationData(animatorIndex);
+				m_world->getAnimationSystem().getAnimationData(animator.m_animationDataIndex);
 
 			const Sprite sprite = Sprite
 			{

@@ -11,7 +11,6 @@ class Animator
 {
 public:
     size_t m_currentKeyFrame{};
-    size_t m_nextKeyFrame{};
     size_t m_ticksSinceLastUpdate{};
     size_t m_gameObjectIndex{};
     size_t m_animationDataIndex{};
