@@ -547,7 +547,10 @@ void VulkanRenderer::drawScene(
         0,
         0);
 
-    ImGui_ImplVulkan_RenderDrawData(uiData, currentImageElement->commandBuffer);
+    if (uiData)
+    {
+        ImGui_ImplVulkan_RenderDrawData(uiData, currentImageElement->commandBuffer);
+    }
 
     vkCmdEndRendering(currentImageElement->commandBuffer);
 

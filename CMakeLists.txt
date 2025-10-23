@@ -32,7 +32,8 @@ add_executable(FireEmblemClone main.cpp
         Core/Animator.h
         Core/AnimationData.h
         Core/AnimationSystem.cpp
-        Core/AnimationSystem.h)
+        Core/AnimationSystem.h
+        Core/MapSerializer.h)
 
 set( GLFW_BUILD_DOCS OFF CACHE BOOL  "GLFW lib only" )
 add_subdirectory(include/glfw-3.4)

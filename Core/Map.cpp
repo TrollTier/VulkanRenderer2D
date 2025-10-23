@@ -46,7 +46,6 @@ bool Map::isInMap(uint16_t column, uint16_t row) const
     return (column < m_columns && row < m_rows);
 }
 
-
 const std::vector<Tile>& Map::getTiles() const
 {
     return *m_tiles;

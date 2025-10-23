@@ -5,9 +5,12 @@
 #ifndef GAME_H
 #define GAME_H
 
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
+
 #include "Map.h"
 #include "World.h"
-#include <GLFW/glfw3.h>
 
 #include "Camera.h"
 #include "Timestep.h"
@@ -56,6 +59,7 @@ private:
     void updateUI();
     void setSelectedTile();
     void drawMap();
+    void saveMap();
 
     [[nodiscard]] glm::vec2 screenToWorld(const glm::vec2& screenPos) const;
     [[nodiscard]] glm::vec3 mouseToWorld() const;

@@ -21,6 +21,9 @@
 #include "../Rendering/VulkanRenderer.h"
 
 #include "../Core/World.h"
+#include <windows.h>
+
+#include "MapSerializer.h"
 
 Editor::Editor()
 {
@@ -276,7 +279,7 @@ void Editor::updateUI()
 
 	if (ImGui::Button("Save"))
 	{
-		std::cout << "Saving..." << std::endl;
+		saveMap();
 	}
 
 	if (ImGui::Button("Animations"))
@@ -599,4 +602,21 @@ void Editor::glfwWindowResize(GLFWwindow* window, int width, int height)
 	game->handleWindowResize();
 }
 
+void Editor::saveMap()
+{
+	char saveFileName[320] = "";
 
+	OPENFILENAME ofn{};
+	ofn.lpstrDefExt = ".fecmap";
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = glfwGetWin32Window(m_window);
+	ofn.lpstrFilter = "FEC-Map files (*.fecmap)\0*.fecmap\0";
+	ofn.lpstrFile = saveFileName;
+	ofn.nMaxFile = 320;
+	ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
+
+	if (GetSaveFileName(&ofn))
+	{
+		MapSerializer::serializeMap(saveFileName, *m_map);
+	}
+}

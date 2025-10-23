@@ -1,4 +1,4 @@
-add_library(Rendering
+add_library(Rendering STATIC
     VulkanRenderer.cpp
         VulkanHelpers.h
         ../Core/Vertex.h
