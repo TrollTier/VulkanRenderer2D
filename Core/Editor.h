@@ -59,6 +59,8 @@ private:
     void updateUI();
     void setSelectedTile();
     void drawMap();
+
+    void openMap();
     void saveMap();
 
     [[nodiscard]] glm::vec2 screenToWorld(const glm::vec2& screenPos) const;

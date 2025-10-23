@@ -26,7 +26,8 @@ public:
     Map(uint16_t rows, uint16_t columns, uint16_t tileSize);
     ~Map();
 
-    [[nodiscard]] Tile& getTileAt(uint16_t column, uint16_t row) const;
+    [[nodiscard]] Tile& getTileAt(uint16_t column, uint16_t row);
+    [[nodiscard]] const Tile& getTileAt(uint16_t column, uint16_t row) const;
     [[nodiscard]] bool isInMap(uint16_t column, uint16_t row) const;
     [[nodiscard]] const std::vector<Tile>& getTiles() const;
     [[nodiscard]] size_t getTileSize() const;
@@ -39,7 +40,7 @@ private:
     uint16_t m_columns = 0;
     uint16_t m_tileSize = 1;
 
-    std::unique_ptr<std::vector<Tile>> m_tiles;
+    std::vector<Tile> m_tiles;
 };
 
 #endif //MAP_H

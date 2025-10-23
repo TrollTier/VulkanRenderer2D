@@ -282,6 +282,13 @@ void Editor::updateUI()
 		saveMap();
 	}
 
+	ImGui::SameLine();
+
+	if (ImGui::Button("Open"))
+	{
+		openMap();
+	}
+
 	if (ImGui::Button("Animations"))
 	{
 		m_runAnimations = !m_runAnimations;
@@ -590,7 +597,10 @@ void Editor::handleWindowResize()
 	};
 
 	m_camera = std::make_unique<Camera>(
-		glm::vec3((float)m_map->getColumns() / 2.0f, (float)m_map->getRows() / 2.0f, 0.0f),
+		glm::vec3(
+			static_cast<float>(m_map->getColumns()) / 2.0f,
+			static_cast<float>(m_map->getRows()) / 2.0f,
+			0.0f),
 		visibleArea,
 		windowExtent.width,
 		windowExtent.height);
@@ -601,6 +611,27 @@ void Editor::glfwWindowResize(GLFWwindow* window, int width, int height)
 	auto game = reinterpret_cast<Editor*>(glfwGetWindowUserPointer(window));
 	game->handleWindowResize();
 }
+
+void Editor::openMap()
+{
+	char saveFileName[320] = "";
+
+	OPENFILENAME ofn{};
+	ofn.lpstrDefExt = ".fecmap";
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = glfwGetWin32Window(m_window);
+	ofn.lpstrFilter = "FEC-Map files (*.fecmap)\0*.fecmap\0";
+	ofn.lpstrFile = saveFileName;
+	ofn.nMaxFile = 320;
+	ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+
+	if (GetOpenFileName(&ofn))
+	{
+		const Map map = MapSerializer::deserializeMap(saveFileName);
+		m_map = std::make_unique<Map>(map);
+	}
+}
+
 
 void Editor::saveMap()
 {
