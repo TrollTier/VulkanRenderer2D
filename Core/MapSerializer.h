@@ -11,7 +11,13 @@
 class MapSerializer
 {
 public:
-    static Map deserializeMap(const std::filesystem::path& filePath)
+    typedef struct
+    {
+        Map map;
+        uint8_t layers;
+    } DeserializeResult;
+
+    static DeserializeResult deserializeMap(const std::filesystem::path& filePath)
     {
         std::ifstream file;
         file.open(filePath);
@@ -33,6 +39,7 @@ public:
         uint16_t tileSize = toUInt16(line, csvElements[2]);
 
         Map map(rows, columns, tileSize);
+        uint8_t maxLayers = 1;
 
         while (std::getline(file, line))
         {
@@ -40,6 +47,8 @@ public:
             uint16_t column = toUInt16(line, csvElements[0]);
             uint16_t row = toUInt16(line, csvElements[1]);
             uint8_t layers = toUInt8(line, csvElements[2]);
+
+            maxLayers = std::max(maxLayers, layers);
 
             for (uint8_t layer = 0; layer < layers; layer++)
             {
@@ -55,7 +64,7 @@ public:
 
         file.close();
 
-        return std::move(map);
+        return DeserializeResult{map, maxLayers};
     }
 
     static void serializeMap(const std::filesystem::path& filePath, const Map& map)

@@ -627,8 +627,9 @@ void Editor::openMap()
 
 	if (GetOpenFileName(&ofn))
 	{
-		const Map map = MapSerializer::deserializeMap(saveFileName);
-		m_map = std::make_unique<Map>(map);
+		const auto result = MapSerializer::deserializeMap(saveFileName);
+		m_map = std::make_unique<Map>(result.map);
+		m_layerCount = result.layers;
 	}
 }
 
