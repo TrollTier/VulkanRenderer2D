@@ -26,6 +26,16 @@ const GameObject& World::addGameObject(
     return m_gameObjects[index];
 }
 
+GameObject &World::getGameObject(size_t index)
+{
+    return m_gameObjects[index];
+}
+
+const GameObject &World::getGameObject(size_t index) const
+{
+    return m_gameObjects[index];
+}
+
 const std::vector<GameObject>& World::getGameObjects() const
 {
     return m_gameObjects;

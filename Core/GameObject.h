@@ -28,6 +28,11 @@ public:
         m_worldPosition += delta;
     }
 
+    void setWorldPosition(const glm::vec3& worldPosition)
+    {
+        m_worldPosition = worldPosition;
+    }
+
 private:
     size_t m_index{};
     glm::vec3 m_worldPosition{};

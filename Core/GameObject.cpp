@@ -18,7 +18,6 @@ GameObject::GameObject(
     m_animatorIndex = animatorIndex;
 }
 
-
 const glm::vec3& GameObject::getWorldPosition() const
 {
     return m_worldPosition;

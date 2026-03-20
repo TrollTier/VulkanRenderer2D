@@ -8,6 +8,8 @@
 #include <filesystem>
 #include <fstream>
 
+#include "Map.h"
+
 class MapSerializer
 {
 public:

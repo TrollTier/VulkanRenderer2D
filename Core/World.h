@@ -20,6 +20,9 @@ public:
         size_t meshHandle,
         Sprite sprite,
         std::optional<size_t> animatorIndex);
+
+    [[nodiscard]] GameObject& getGameObject(size_t index);
+    [[nodiscard]] const GameObject& getGameObject(size_t index) const;
     [[nodiscard]] const std::vector<GameObject>& getGameObjects() const;
     [[nodiscard]] AnimationSystem& getAnimationSystem() const;
 
