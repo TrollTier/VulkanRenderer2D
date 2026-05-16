@@ -171,11 +171,12 @@ void Editor::initImGui()
 	ImGui::StyleColorsDark();
 	//ImGui::StyleColorsLight();
 
+	const auto swapchain = m_vulkanResources->getSwapchain().lock();
 	VkPipelineRenderingCreateInfoKHR info{VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR};
-	info.pColorAttachmentFormats = &m_renderer->getSwapchain().m_format.format;
+	info.pColorAttachmentFormats = &swapchain->m_format.format;
 	info.colorAttachmentCount = 1;
 
-	const size_t imageCount = m_renderer->getSwapchain().getImageCount();
+	const size_t imageCount = swapchain->getImageCount();
 
 	// Setup Platform/Renderer backends
 	ImGui_ImplGlfw_InitForVulkan(m_window, true);

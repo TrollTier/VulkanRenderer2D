@@ -180,6 +180,8 @@ Game::Game()
 
 				break;
 			}
+
+			default: break;
 		}
 	};
 	m_inputSystem->onClick(clickLambda);
@@ -293,6 +295,19 @@ void Game::drawMap()
 		}
 	}
 }
+
+void Game::drawSelectedCharacter()
+{
+	if (m_selectedGameObjectIndex < 0)
+	{
+		return;
+	}
+
+	const auto& objects = m_world->getGameObject(m_selectedGameObjectIndex);
+
+
+}
+
 
 glm::vec2 Game::screenToWorld(const glm::vec2& screenPos) const
 {

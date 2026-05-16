@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <string.h>
 #include <vector>
+#include <array>
 
 #include "VulkanWindow.h"
 
@@ -46,6 +47,19 @@ void VulkanResources::initialize(
     {
         throw std::runtime_error("failed to create command pool!");
     }
+
+    const auto windowExtent = m_window->getWindowExtent();
+
+    m_swapchain = std::make_shared<Swapchain>(
+        m_physicalDevice,
+        m_logicalDevice,
+        m_surface,
+        m_commandPool,
+        m_allocator,
+        windowExtent.width,
+        windowExtent.height);
+
+    initializeDescriptorPool();
 }
 
 void VulkanResources::initializeInstance(
@@ -237,4 +251,37 @@ uint32_t VulkanResources::getQueueFamilyIndex(VkQueueFlags queueFlags)
     }
 
     throw std::runtime_error("failed to find suitable queue families!");
+}
+
+void VulkanResources::initializeDescriptorPool()
+{
+    const auto swapchainImageCount = m_swapchain->getImageCount();
+
+    VkPhysicalDeviceProperties properties{};
+    vkGetPhysicalDeviceProperties(m_physicalDevice, &properties);
+
+    std::array<VkDescriptorPoolSize, 3> poolSizes{};
+    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSizes[0].descriptorCount = swapchainImageCount;
+    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSizes[1].descriptorCount = swapchainImageCount * 100;
+    poolSizes[2].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    poolSizes[2].descriptorCount = swapchainImageCount;
+
+    VkDescriptorPoolCreateInfo descriptorPoolInfo{};
+    descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    descriptorPoolInfo.maxSets = swapchainImageCount * 10000;
+    descriptorPoolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+    descriptorPoolInfo.pPoolSizes = poolSizes.data();
+    descriptorPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+
+    const VkResult result = vkCreateDescriptorPool(
+        m_logicalDevice,
+        &descriptorPoolInfo,
+        m_allocator,
+        &m_descriptorPool);
+
+    if (result != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor pool");
+    }
 }

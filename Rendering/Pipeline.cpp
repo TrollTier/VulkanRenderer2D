@@ -55,23 +55,21 @@ Pipeline::~Pipeline()
 }
 
 Pipeline::Pipeline(
-    std::shared_ptr<VulkanResources> ressources,
+    std::shared_ptr<VulkanResources> resources,
     std::string vertexShaderPath,
     std::string fragmentShaderPath,
-    size_t swapchainImageCount,
     VkFormat swapchainImageFormat)
 {
-    m_vulkanResources = ressources;
+    m_vulkanResources = resources;
 
-    initializeDescriptorPool(swapchainImageCount);
     initializeDescriptorSetLayout();
     initializeObjectsBufferLayout();
 
     auto vertShaderCode = readFile(vertexShaderPath);
     auto fragShaderCode = readFile(fragmentShaderPath);
 
-    VkShaderModule vertShaderModule = createShaderModule(ressources->m_logicalDevice, vertShaderCode);
-    VkShaderModule fragShaderModule = createShaderModule(ressources->m_logicalDevice, fragShaderCode);
+    VkShaderModule vertShaderModule = createShaderModule(resources->m_logicalDevice, vertShaderCode);
+    VkShaderModule fragShaderModule = createShaderModule(resources->m_logicalDevice, fragShaderCode);
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
     vertShaderStageInfo.module = vertShaderModule;
@@ -161,9 +159,9 @@ Pipeline::Pipeline(
     pipelineLayoutInfo.pSetLayouts = layouts.data();
 
     if (vkCreatePipelineLayout(
-            ressources->m_logicalDevice,
+            resources->m_logicalDevice,
             &pipelineLayoutInfo,
-            ressources->m_allocator,
+            resources->m_allocator,
             &m_pipelineLayout) != VK_SUCCESS)
     {
         throw std::runtime_error("Failed to create pipeline layout");
@@ -192,18 +190,18 @@ Pipeline::Pipeline(
     graphicsPipelineCreateInfo.pMultisampleState = &multisampling;
 
     if (vkCreateGraphicsPipelines(
-            ressources->m_logicalDevice,
+            resources->m_logicalDevice,
             nullptr,
             1,
             &graphicsPipelineCreateInfo,
-            ressources->m_allocator,
+            resources->m_allocator,
             &m_pipeline) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
-    vkDestroyShaderModule(ressources->m_logicalDevice, vertShaderModule, ressources->m_allocator);
-    vkDestroyShaderModule(ressources->m_logicalDevice, fragShaderModule, ressources->m_allocator);
+    vkDestroyShaderModule(resources->m_logicalDevice, vertShaderModule, resources->m_allocator);
+    vkDestroyShaderModule(resources->m_logicalDevice, fragShaderModule, resources->m_allocator);
 }
 
 void Pipeline::initializeDescriptorSetLayout()
@@ -216,7 +214,7 @@ void Pipeline::initializeDescriptorSetLayout()
 
     VkDescriptorSetLayoutBinding samplerBinding{};
     samplerBinding.binding = 1;
-    samplerBinding.descriptorCount = 11;
+    samplerBinding.descriptorCount = 12;
     samplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     samplerBinding.pImmutableSamplers = nullptr;
     samplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -262,37 +260,6 @@ void Pipeline::initializeObjectsBufferLayout()
     if (result != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create descriptor set layout");
-    }
-}
-
-void Pipeline::initializeDescriptorPool(size_t swapchainImageCount)
-{
-    VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(m_vulkanResources->m_physicalDevice, &properties);
-
-    std::array<VkDescriptorPoolSize, 3> poolSizes{};
-    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount = swapchainImageCount;
-    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = swapchainImageCount * 100;
-    poolSizes[2].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    poolSizes[2].descriptorCount = swapchainImageCount;
-
-    VkDescriptorPoolCreateInfo descriptorPoolInfo{};
-    descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    descriptorPoolInfo.maxSets = swapchainImageCount * 10000;
-    descriptorPoolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-    descriptorPoolInfo.pPoolSizes = poolSizes.data();
-    descriptorPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-
-    const VkResult result = vkCreateDescriptorPool(
-        m_vulkanResources->m_logicalDevice,
-        &descriptorPoolInfo,
-        m_vulkanResources->m_allocator,
-        &m_descriptorPool);
-
-    if (result != VK_SUCCESS) {
-        throw std::runtime_error("failed to create descriptor pool");
     }
 }
 

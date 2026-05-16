@@ -35,12 +35,6 @@ public:
         const Camera& camera,
         ImDrawData* uiData);
 
-    [[nodiscard]] const Swapchain& getSwapchain() const
-    {
-        const Swapchain& ptr = *m_swapchain;
-        return ptr;
-    }
-
     void setPixelsPerUnit(uint32_t pixelsPerUnit) { m_pixelsPerUnit = pixelsPerUnit; }
     void drawSprite(
         const glm::vec3 &worldPosition,
@@ -62,7 +56,6 @@ private:
     std::vector<VkDescriptorSet> m_defaultDescriptorSets;
 
     std::shared_ptr<VulkanResources> m_vulkanResources;
-    std::unique_ptr<Swapchain> m_swapchain;
     std::unique_ptr<Pipeline> m_pipeline;
 
     std::vector<std::unique_ptr<Mesh>> m_meshes;

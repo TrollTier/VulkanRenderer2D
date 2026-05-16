@@ -9,6 +9,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
 #include <iostream>
+#include <bits/unordered_map.h>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "CameraUniformData.h"
@@ -37,7 +38,7 @@ VulkanRenderer::~VulkanRenderer()
 {
     const auto device = m_vulkanResources->m_logicalDevice;
     const auto allocator = m_vulkanResources->m_allocator;
-    const auto& descriptorPool =  m_pipeline->getDescriptorPool();
+    const auto& descriptorPool =  m_vulkanResources->m_descriptorPool;
 
     vkDeviceWaitIdle(device);
 
@@ -67,18 +68,18 @@ VulkanRenderer::~VulkanRenderer()
 
 void VulkanRenderer::initialize()
 {
-    m_swapchain = std::make_unique<Swapchain>(m_vulkanResources);
+    const auto swapchain = m_vulkanResources->getSwapchain().lock();
+
     m_pipeline = std::make_unique<Pipeline>(
         m_vulkanResources,
         "../Shaders/vert.spv",
         "../Shaders/frag.spv",
-        m_swapchain->getImageCount(),
-        m_swapchain->m_format.format);
+        swapchain->m_format.format);
 
     initializeSampler();
     initializeDefaultMeshes();
 
-    const auto imageCount = m_swapchain->getImageCount();
+    const auto imageCount = swapchain->getImageCount();
     m_cameraBuffers.reserve(imageCount);
     m_defaultDescriptorSets.resize(imageCount);
     m_objectBufferDescriptors.resize(imageCount);
@@ -89,7 +90,7 @@ void VulkanRenderer::initialize()
     VkDescriptorSetAllocateInfo objectBufferInfo = {};
     objectBufferInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     objectBufferInfo.descriptorSetCount = imageCount;
-    objectBufferInfo.descriptorPool = m_pipeline->getDescriptorPool();
+    objectBufferInfo.descriptorPool = m_vulkanResources->m_descriptorPool;
     objectBufferInfo.pSetLayouts = descriptorSetLayouts.data();
 
     const VkResult result = vkAllocateDescriptorSets(
@@ -169,7 +170,8 @@ size_t VulkanRenderer::loadTexture(const AtlasEntry& spriteInfo)
 {
     m_textures.emplace_back(std::make_unique<Texture2D>(m_vulkanResources, m_assetsBasePath, spriteInfo));
 
-    const size_t imageCount =  m_swapchain->getImageCount();
+    const auto swapchain = m_vulkanResources->getSwapchain().lock();
+    const size_t imageCount =  swapchain->getImageCount();
 
     for (size_t i = 0; i < imageCount; i++)
     {
@@ -177,7 +179,7 @@ size_t VulkanRenderer::loadTexture(const AtlasEntry& spriteInfo)
         {
             vkFreeDescriptorSets(
                 m_vulkanResources->m_logicalDevice,
-                m_pipeline->getDescriptorPool(),
+                m_vulkanResources->m_descriptorPool,
                 1,
                 &m_defaultDescriptorSets[i]);
         }
@@ -189,7 +191,7 @@ size_t VulkanRenderer::loadTexture(const AtlasEntry& spriteInfo)
 
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = m_pipeline->getDescriptorPool();
+    allocInfo.descriptorPool = m_vulkanResources->m_descriptorPool;
     allocInfo.descriptorSetCount = imageCount;
     allocInfo.pSetLayouts = layouts.data();
 
@@ -406,14 +408,15 @@ void VulkanRenderer::drawScene(
     const Camera& camera,
     ImDrawData* uiData)
 {
-    const auto currentFrameElement = m_swapchain->getCurrentFrame();
+    const auto swapchain = m_vulkanResources->getSwapchain().lock();
+    const auto currentFrameElement = swapchain->getCurrentFrame();
 
     vkWaitForFences(m_vulkanResources->m_logicalDevice, 1, &currentFrameElement->fence, VK_TRUE, UINT64_MAX);
 
     uint32_t imageIndex;
     VkResult result = vkAcquireNextImageKHR(
         m_vulkanResources->m_logicalDevice,
-        m_swapchain->m_swapchain,
+        swapchain->m_swapchain,
         UINT64_MAX,
         currentFrameElement->startSemaphore,
         VK_NULL_HANDLE,
@@ -423,8 +426,9 @@ void VulkanRenderer::drawScene(
     {
         vkDeviceWaitIdle(m_vulkanResources->m_logicalDevice);
 
-        m_swapchain.reset();
-        m_swapchain = std::make_unique<Swapchain>(m_vulkanResources);
+        // TODO: Fix swapchain resize
+        // swapchain.reset();
+        // swapchain = std::make_unique<Swapchain>(m_vulkanResources);
         return;
     }
 
@@ -433,7 +437,7 @@ void VulkanRenderer::drawScene(
         throw std::runtime_error("failed to acquire swap chain image!");
     }
 
-    const auto currentImageElement = m_swapchain->getFrameAt(imageIndex);
+    const auto currentImageElement = swapchain->getFrameAt(imageIndex);
 
     if (currentImageElement->lastFence)
     {
@@ -485,7 +489,7 @@ void VulkanRenderer::drawScene(
     renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
     renderingInfo.renderArea = {
         { 0, 0 },
-        { m_swapchain->m_width, m_swapchain->m_height }
+        { swapchain->m_width, swapchain->m_height }
     };
     renderingInfo.layerCount = 1;
     renderingInfo.colorAttachmentCount = 1;
@@ -497,8 +501,8 @@ void VulkanRenderer::drawScene(
     VkViewport viewport = {
         0,
         0,
-        static_cast<float>(m_swapchain->m_width),
-        static_cast<float>(m_swapchain->m_height),
+        static_cast<float>(swapchain->m_width),
+        static_cast<float>(swapchain->m_height),
         0,
         1
     };
@@ -506,7 +510,7 @@ void VulkanRenderer::drawScene(
 
     VkRect2D scissor = {
         { 0, 0 },
-        { m_swapchain->m_width, m_swapchain->m_height }
+        { swapchain->m_width, swapchain->m_height }
     };
     vkCmdSetScissor(currentImageElement->commandBuffer, 0, 1, &scissor);
 
@@ -516,8 +520,8 @@ void VulkanRenderer::drawScene(
         m_pipeline->getPipeline());
 
     std::vector<VkDescriptorSet> descriptorSets{};
-    descriptorSets.push_back(m_defaultDescriptorSets[m_swapchain->getCurrentFrameIndex()]);
-    descriptorSets.push_back(m_objectBufferDescriptors[m_swapchain->getCurrentFrameIndex()]);
+    descriptorSets.push_back(m_defaultDescriptorSets[swapchain->getCurrentFrameIndex()]);
+    descriptorSets.push_back(m_objectBufferDescriptors[swapchain->getCurrentFrameIndex()]);
 
     // Bind global descriptor set
     vkCmdBindDescriptorSets(
@@ -580,7 +584,7 @@ void VulkanRenderer::drawScene(
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores = &currentFrameElement->endSemaphore;
     presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = &m_swapchain->m_swapchain;
+    presentInfo.pSwapchains = &swapchain->m_swapchain;
     presentInfo.pImageIndices = &imageIndex;
 
     result = vkQueuePresentKHR(m_vulkanResources->m_graphicsQueue, &presentInfo);
@@ -589,8 +593,9 @@ void VulkanRenderer::drawScene(
     {
         vkDeviceWaitIdle(m_vulkanResources->m_logicalDevice);
 
-        m_swapchain.reset();
-        m_swapchain = std::make_unique<Swapchain>(m_vulkanResources);
+        // TODO: Fix swapchain resize
+        // swapchain->reset();
+        // swapchain = std::make_unique<Swapchain>(m_vulkanResources);
         return;
     }
 
@@ -599,7 +604,7 @@ void VulkanRenderer::drawScene(
         throw std::runtime_error("failed to present image!");
     }
 
-    m_swapchain->moveToNextFrame();
+    swapchain->moveToNextFrame();
     m_drawParameters.clear();
 }
 

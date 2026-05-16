@@ -20,7 +20,14 @@ public:
     uint32_t m_width = 0;
     uint32_t m_height = 0;
 
-    Swapchain(std::shared_ptr<VulkanResources> ressources);
+    Swapchain(
+    VkPhysicalDevice physicalDevice,
+    VkDevice logicalDevice,
+    VkSurfaceKHR surface,
+    VkCommandPool commandPool,
+    VkAllocationCallbacks* allocator,
+    uint32_t windowWidth,
+    uint32_t windowHeight);
     ~Swapchain();
 
     SwapchainElement* getCurrentFrame();
@@ -38,8 +45,10 @@ public:
     }
 
 private:
+    VkDevice m_logicalDevice = VK_NULL_HANDLE;
+    VkCommandPool m_commandPool = VK_NULL_HANDLE;
+    VkAllocationCallbacks* m_allocator = nullptr;
     std::vector<SwapchainElement> m_swapChainElements;
-    std::shared_ptr<VulkanResources> m_ressources;
     size_t m_currentFrame = 0;
 };
 

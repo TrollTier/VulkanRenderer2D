@@ -62,26 +62,38 @@ VkImageView createImageView(
     return imageView;
 }
 
-Swapchain::Swapchain(std::shared_ptr<VulkanResources> ressources)
+Swapchain::Swapchain(
+    VkPhysicalDevice physicalDevice,
+    VkDevice logicalDevice,
+    VkSurfaceKHR surface,
+    VkCommandPool commandPool,
+    VkAllocationCallbacks* allocator,
+    uint32_t windowWidth,
+    uint32_t windowHeight)
 {
-    m_ressources = ressources;
+    m_allocator = allocator;
+    m_commandPool = commandPool;
+    m_logicalDevice = logicalDevice;
 
     VkSurfaceCapabilitiesKHR capabilities;
-    if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_ressources->m_physicalDevice, m_ressources->m_surface, &capabilities) != VK_SUCCESS)
+    if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &capabilities) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to query surface capabilities!");
     }
 
-    const auto windowExtent = ressources->getWindow()->getWindowExtent();
-
-    m_width = std::clamp(windowExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-    m_height = std::clamp(windowExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
-
-    m_format = findFormat(m_ressources->m_physicalDevice, m_ressources->m_surface);
+    m_width = std::clamp(
+        windowWidth,
+        capabilities.minImageExtent.width,
+        capabilities.maxImageExtent.width);
+    m_height = std::clamp(
+        windowHeight,
+        capabilities.minImageExtent.height,
+        capabilities.maxImageExtent.height);
+    m_format = findFormat(physicalDevice, surface);
 
     VkSwapchainCreateInfoKHR createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.surface = m_ressources->m_surface;
+    createInfo.surface = surface;
     createInfo.minImageCount = capabilities.minImageCount;
     createInfo.imageFormat = m_format.format;
     createInfo.imageColorSpace = m_format.colorSpace;
@@ -94,19 +106,19 @@ Swapchain::Swapchain(std::shared_ptr<VulkanResources> ressources)
     createInfo.presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
     createInfo.clipped = true;
 
-    if(vkCreateSwapchainKHR(m_ressources->m_logicalDevice, &createInfo, m_ressources->m_allocator, &m_swapchain) != VK_SUCCESS)
+    if(vkCreateSwapchainKHR(logicalDevice, &createInfo, allocator, &m_swapchain) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create swapchain!");
     }
 
     uint32_t imageCount;
-    if (vkGetSwapchainImagesKHR(m_ressources->m_logicalDevice, m_swapchain, &imageCount, nullptr) != VK_SUCCESS)
+    if (vkGetSwapchainImagesKHR(logicalDevice, m_swapchain, &imageCount, nullptr) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to query swapchain images!");
     }
 
     std::vector<VkImage> images(imageCount);
-    if(vkGetSwapchainImagesKHR(m_ressources->m_logicalDevice, m_swapchain, &imageCount, images.data()) != VK_SUCCESS)
+    if(vkGetSwapchainImagesKHR(logicalDevice, m_swapchain, &imageCount, images.data()) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to query swapchain images!");
     }
@@ -116,34 +128,34 @@ Swapchain::Swapchain(std::shared_ptr<VulkanResources> ressources)
 
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.commandBufferCount = imageCount;
-    allocInfo.commandPool = m_ressources->m_commandPool;
+    allocInfo.commandPool = commandPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 
-    if (vkAllocateCommandBuffers(m_ressources->m_logicalDevice, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+    if (vkAllocateCommandBuffers(logicalDevice, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate command buffers!");
     }
 
     for (size_t i = 0; i < imageCount; i++)
     {
         VkImageView imageView = createImageView(
-            m_ressources->m_logicalDevice,
+            logicalDevice,
             images[i],
             m_format.format,
             VK_IMAGE_ASPECT_COLOR_BIT,
-            m_ressources->m_allocator);
+            allocator);
 
         VkSemaphore startSemaphore = VK_NULL_HANDLE;
         VkSemaphore endSemaphore = VK_NULL_HANDLE;
         VkSemaphoreCreateInfo semaphoreCreateInfo{};
         semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-        if (vkCreateSemaphore(m_ressources->m_logicalDevice, &semaphoreCreateInfo, m_ressources->m_allocator, &startSemaphore) != VK_SUCCESS)
+        if (vkCreateSemaphore(logicalDevice, &semaphoreCreateInfo, allocator, &startSemaphore) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create start semaphore!");
         }
 
-        if (vkCreateSemaphore(m_ressources->m_logicalDevice, &semaphoreCreateInfo, m_ressources->m_allocator, &endSemaphore) != VK_SUCCESS)
+        if (vkCreateSemaphore(logicalDevice, &semaphoreCreateInfo, allocator, &endSemaphore) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create end semaphore!");
         }
@@ -152,7 +164,7 @@ Swapchain::Swapchain(std::shared_ptr<VulkanResources> ressources)
         VkFenceCreateInfo fenceCreateInfo{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
         fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-        if (vkCreateFence(m_ressources->m_logicalDevice, &fenceCreateInfo, m_ressources->m_allocator, &fence) != VK_SUCCESS)
+        if (vkCreateFence(logicalDevice, &fenceCreateInfo, allocator, &fence) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create fence!");
         }
@@ -176,14 +188,14 @@ Swapchain::~Swapchain()
 {
     for (const auto element : m_swapChainElements)
     {
-        vkDestroyImageView(m_ressources->m_logicalDevice, element.imageView, m_ressources->m_allocator);
-        vkDestroySemaphore(m_ressources->m_logicalDevice, element.endSemaphore, m_ressources->m_allocator);
-        vkDestroySemaphore(m_ressources->m_logicalDevice, element.startSemaphore, m_ressources->m_allocator);
-        vkDestroyFence(m_ressources->m_logicalDevice, element.fence, m_ressources->m_allocator);
-        vkFreeCommandBuffers(m_ressources->m_logicalDevice, m_ressources->m_commandPool, 1, &element.commandBuffer);
+        vkDestroyImageView(m_logicalDevice, element.imageView, m_allocator);
+        vkDestroySemaphore(m_logicalDevice, element.endSemaphore, m_allocator);
+        vkDestroySemaphore(m_logicalDevice, element.startSemaphore, m_allocator);
+        vkDestroyFence(m_logicalDevice, element.fence, m_allocator);
+        vkFreeCommandBuffers(m_logicalDevice, m_commandPool, 1, &element.commandBuffer);
     }
 
-    vkDestroySwapchainKHR(m_ressources->m_logicalDevice, m_swapchain, m_ressources->m_allocator);
+    vkDestroySwapchainKHR(m_logicalDevice, m_swapchain, m_allocator);
 }
 
 SwapchainElement* Swapchain::getCurrentFrame()

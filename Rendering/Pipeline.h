@@ -15,10 +15,9 @@ class Pipeline
 public:
     ~Pipeline();
     Pipeline(
-        std::shared_ptr<VulkanResources> ressources,
+        std::shared_ptr<VulkanResources> resources,
         std::string vertexShaderPath,
         std::string fragmentShaderPath,
-        size_t swapchainImageCount,
         VkFormat swapchainImageFormat);
 
     [[nodiscard]] VkPipelineLayout getLayout() const
@@ -29,11 +28,6 @@ public:
     [[nodiscard]] VkDescriptorSetLayout getDescriptorSetLayout() const
     {
         return m_descriptorSetLayout;
-    }
-
-    [[nodiscard]] VkDescriptorPool getDescriptorPool() const
-    {
-        return m_descriptorPool;
     }
 
     [[nodiscard]] VkPipeline getPipeline() const
@@ -58,7 +52,6 @@ private:
 
     void initializeDescriptorSetLayout();
     void initializeObjectsBufferLayout();
-    void initializeDescriptorPool(size_t swapchainImageCount);
 };
 
 #endif //PIPELINE_H

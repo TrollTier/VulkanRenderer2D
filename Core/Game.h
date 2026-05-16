@@ -58,6 +58,7 @@ private:
     int32_t m_selectedGameObjectIndex = -1;
 
     void drawMap();
+    void drawSelectedCharacter();
 
     [[nodiscard]] glm::vec2 screenToWorld(const glm::vec2& screenPos) const;
     [[nodiscard]] glm::vec3 mouseToWorld() const;
