@@ -14,6 +14,9 @@
 
 VulkanResources::~VulkanResources()
 {
+    m_swapchain.reset();
+
+    vkDestroyDescriptorPool(m_logicalDevice, m_descriptorPool, m_allocator);
     vkDestroyCommandPool(m_logicalDevice, m_commandPool, m_allocator);
     vkDestroySurfaceKHR(m_instance, m_surface, m_allocator);
     vkDestroyDevice(m_logicalDevice, m_allocator);
@@ -49,7 +52,6 @@ void VulkanResources::initialize(
     }
 
     const auto windowExtent = m_window->getWindowExtent();
-
     m_swapchain = std::make_shared<Swapchain>(
         m_physicalDevice,
         m_logicalDevice,
@@ -284,4 +286,20 @@ void VulkanResources::initializeDescriptorPool()
     if (result != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool");
     }
+}
+
+void VulkanResources::recreateSwapchain()
+{
+    const auto windowExtent = m_window->getWindowExtent();
+    vkDeviceWaitIdle(m_logicalDevice);
+
+    m_swapchain.reset();
+    m_swapchain = std::make_shared<Swapchain>(
+        m_physicalDevice,
+        m_logicalDevice,
+        m_surface,
+        m_commandPool,
+        m_allocator,
+        windowExtent.width,
+        windowExtent.height);
 }

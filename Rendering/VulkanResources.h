@@ -34,6 +34,8 @@ public:
         const std::vector<const char*>& validationLayers,
         const std::vector<const char*>& instanceExtensions);
 
+    void recreateSwapchain();
+
     [[nodiscard]] std::shared_ptr<VulkanWindow> getWindow() const
     {
         return m_window;

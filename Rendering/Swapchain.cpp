@@ -106,19 +106,22 @@ Swapchain::Swapchain(
     createInfo.presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
     createInfo.clipped = true;
 
-    if(vkCreateSwapchainKHR(logicalDevice, &createInfo, allocator, &m_swapchain) != VK_SUCCESS)
+    VkResult result = vkCreateSwapchainKHR(logicalDevice, &createInfo, allocator, &m_swapchain);
+    if(result != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create swapchain!");
     }
 
     uint32_t imageCount;
-    if (vkGetSwapchainImagesKHR(logicalDevice, m_swapchain, &imageCount, nullptr) != VK_SUCCESS)
+    result = vkGetSwapchainImagesKHR(logicalDevice, m_swapchain, &imageCount, nullptr);
+    if (result != VK_SUCCESS)
     {
         throw std::runtime_error("failed to query swapchain images!");
     }
 
     std::vector<VkImage> images(imageCount);
-    if(vkGetSwapchainImagesKHR(logicalDevice, m_swapchain, &imageCount, images.data()) != VK_SUCCESS)
+    result = vkGetSwapchainImagesKHR(logicalDevice, m_swapchain, &imageCount, images.data());
+    if(result != VK_SUCCESS)
     {
         throw std::runtime_error("failed to query swapchain images!");
     }

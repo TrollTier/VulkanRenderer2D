@@ -408,7 +408,7 @@ void VulkanRenderer::drawScene(
     const Camera& camera,
     ImDrawData* uiData)
 {
-    const auto swapchain = m_vulkanResources->getSwapchain().lock();
+    auto swapchain = m_vulkanResources->getSwapchain().lock();
     const auto currentFrameElement = swapchain->getCurrentFrame();
 
     vkWaitForFences(m_vulkanResources->m_logicalDevice, 1, &currentFrameElement->fence, VK_TRUE, UINT64_MAX);
@@ -424,11 +424,8 @@ void VulkanRenderer::drawScene(
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
     {
-        vkDeviceWaitIdle(m_vulkanResources->m_logicalDevice);
-
-        // TODO: Fix swapchain resize
-        // swapchain.reset();
-        // swapchain = std::make_unique<Swapchain>(m_vulkanResources);
+        swapchain.reset();
+        m_vulkanResources->recreateSwapchain();
         return;
     }
 
@@ -591,11 +588,8 @@ void VulkanRenderer::drawScene(
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
     {
-        vkDeviceWaitIdle(m_vulkanResources->m_logicalDevice);
-
-        // TODO: Fix swapchain resize
-        // swapchain->reset();
-        // swapchain = std::make_unique<Swapchain>(m_vulkanResources);
+        swapchain.reset();
+        m_vulkanResources->recreateSwapchain();
         return;
     }
 
