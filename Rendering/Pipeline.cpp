@@ -47,11 +47,8 @@ Pipeline::~Pipeline()
     const auto device = m_vulkanResources->m_logicalDevice;
     const auto allocator = m_vulkanResources->m_allocator;
 
-    vkDestroyDescriptorPool(device, m_descriptorPool, allocator);
     vkDestroyPipeline(device, m_pipeline, allocator);
     vkDestroyPipelineLayout(device, m_pipelineLayout, allocator);
-    vkDestroyDescriptorSetLayout(device, m_descriptorSetLayout, allocator);
-    vkDestroyDescriptorSetLayout(device, m_descriptorSetLayoutObjectsBuffer, allocator);
 }
 
 Pipeline::Pipeline(
@@ -61,9 +58,6 @@ Pipeline::Pipeline(
     VkFormat swapchainImageFormat)
 {
     m_vulkanResources = resources;
-
-    initializeDescriptorSetLayout();
-    initializeObjectsBufferLayout();
 
     auto vertShaderCode = readFile(vertexShaderPath);
     auto fragShaderCode = readFile(fragmentShaderPath);
@@ -151,8 +145,8 @@ Pipeline::Pipeline(
     dynamicState.pDynamicStates = dynamicStates.data();
 
     std::vector<VkDescriptorSetLayout> layouts(2);
-    layouts[0] = m_descriptorSetLayout;
-    layouts[1] = m_descriptorSetLayoutObjectsBuffer;
+    layouts[0] = m_vulkanResources->m_descriptorSetLayout;
+    layouts[1] = m_vulkanResources->m_descriptorSetLayoutObjectsBuffer;
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
     pipelineLayoutInfo.setLayoutCount = layouts.size();
@@ -202,65 +196,6 @@ Pipeline::Pipeline(
 
     vkDestroyShaderModule(resources->m_logicalDevice, vertShaderModule, resources->m_allocator);
     vkDestroyShaderModule(resources->m_logicalDevice, fragShaderModule, resources->m_allocator);
-}
-
-void Pipeline::initializeDescriptorSetLayout()
-{
-    VkDescriptorSetLayoutBinding cameraBinding{};
-    cameraBinding.binding = 0;
-    cameraBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    cameraBinding.descriptorCount = 1;
-    cameraBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-    VkDescriptorSetLayoutBinding samplerBinding{};
-    samplerBinding.binding = 1;
-    samplerBinding.descriptorCount = 12;
-    samplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerBinding.pImmutableSamplers = nullptr;
-    samplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    std::array<VkDescriptorSetLayoutBinding, 2> bindings = { cameraBinding, samplerBinding };
-
-    VkDescriptorSetLayoutCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-    createInfo.pBindings = bindings.data();
-
-    const VkResult result = vkCreateDescriptorSetLayout(
-        m_vulkanResources->m_logicalDevice,
-        &createInfo,
-        m_vulkanResources->m_allocator,
-        &m_descriptorSetLayout);
-
-    if (result != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create descriptor set layout");
-    }
-}
-
-void Pipeline::initializeObjectsBufferLayout()
-{
-    VkDescriptorSetLayoutBinding objectsBufferBinding{};
-    objectsBufferBinding.binding = 0;
-    objectsBufferBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    objectsBufferBinding.descriptorCount = 1;
-    objectsBufferBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    VkDescriptorSetLayoutCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    createInfo.bindingCount = 1;
-    createInfo.pBindings = &objectsBufferBinding;
-
-    const VkResult result = vkCreateDescriptorSetLayout(
-        m_vulkanResources->m_logicalDevice,
-        &createInfo,
-        m_vulkanResources->m_allocator,
-        &m_descriptorSetLayoutObjectsBuffer);
-
-    if (result != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create descriptor set layout");
-    }
 }
 
 

@@ -22,6 +22,8 @@ public:
     VkDevice m_logicalDevice = VK_NULL_HANDLE;
     VkQueue m_graphicsQueue = VK_NULL_HANDLE;
     VkDescriptorPool m_descriptorPool = VK_NULL_HANDLE;
+    VkDescriptorSetLayout m_descriptorSetLayout = VK_NULL_HANDLE;
+    VkDescriptorSetLayout m_descriptorSetLayoutObjectsBuffer = VK_NULL_HANDLE;
 
     uint32_t m_graphicsQueueFamilyIndex = 0;
     VkCommandPool m_commandPool = VK_NULL_HANDLE;
@@ -65,6 +67,8 @@ private:
     void initializeLogicalDevice();
     void verifyValidationLayerSupport(const std::vector<const char*>& layerNames);
     void initializeDescriptorPool();
+    void initializeDescriptorSetLayout();
+    void initializeObjectsBufferLayout();
 };
 
 #endif //VULKANRESSOURCES_H

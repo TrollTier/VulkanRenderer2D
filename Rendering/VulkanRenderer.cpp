@@ -84,7 +84,7 @@ void VulkanRenderer::initialize()
     m_defaultDescriptorSets.resize(imageCount);
     m_objectBufferDescriptors.resize(imageCount);
 
-    const auto objectBufferLayout = m_pipeline->getDescriptorSetLayoutObjectsBuffer();
+    const auto objectBufferLayout = m_vulkanResources->m_descriptorSetLayoutObjectsBuffer;
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts{imageCount, objectBufferLayout};
 
     VkDescriptorSetAllocateInfo objectBufferInfo = {};
@@ -187,7 +187,7 @@ size_t VulkanRenderer::loadTexture(const AtlasEntry& spriteInfo)
 
     m_defaultDescriptorSets.clear();
     m_defaultDescriptorSets.resize(imageCount);
-    std::vector<VkDescriptorSetLayout> layouts(imageCount, m_pipeline->getDescriptorSetLayout());
+    std::vector<VkDescriptorSetLayout> layouts(imageCount, m_vulkanResources->m_descriptorSetLayout);
 
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;

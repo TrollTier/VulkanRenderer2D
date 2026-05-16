@@ -16,6 +16,8 @@ VulkanResources::~VulkanResources()
 {
     m_swapchain.reset();
 
+    vkDestroyDescriptorSetLayout(m_logicalDevice, m_descriptorSetLayout, m_allocator);
+    vkDestroyDescriptorSetLayout(m_logicalDevice, m_descriptorSetLayoutObjectsBuffer, m_allocator);
     vkDestroyDescriptorPool(m_logicalDevice, m_descriptorPool, m_allocator);
     vkDestroyCommandPool(m_logicalDevice, m_commandPool, m_allocator);
     vkDestroySurfaceKHR(m_instance, m_surface, m_allocator);
@@ -62,6 +64,8 @@ void VulkanResources::initialize(
         windowExtent.height);
 
     initializeDescriptorPool();
+    initializeDescriptorSetLayout();
+    initializeObjectsBufferLayout();
 }
 
 void VulkanResources::initializeInstance(
@@ -302,4 +306,62 @@ void VulkanResources::recreateSwapchain()
         m_allocator,
         windowExtent.width,
         windowExtent.height);
+}
+
+void VulkanResources::initializeDescriptorSetLayout()
+{
+    VkDescriptorSetLayoutBinding cameraBinding{};
+    cameraBinding.binding = 0;
+    cameraBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    cameraBinding.descriptorCount = 1;
+    cameraBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+    VkDescriptorSetLayoutBinding samplerBinding{};
+    samplerBinding.binding = 1;
+    samplerBinding.descriptorCount = 12;
+    samplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    samplerBinding.pImmutableSamplers = nullptr;
+    samplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = { cameraBinding, samplerBinding };
+    VkDescriptorSetLayoutCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    createInfo.pBindings = bindings.data();
+
+    const VkResult result = vkCreateDescriptorSetLayout(
+        m_logicalDevice,
+        &createInfo,
+        m_allocator,
+        &m_descriptorSetLayout);
+
+    if (result != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create descriptor set layout");
+    }
+}
+
+void VulkanResources::initializeObjectsBufferLayout()
+{
+    VkDescriptorSetLayoutBinding objectsBufferBinding{};
+    objectsBufferBinding.binding = 0;
+    objectsBufferBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    objectsBufferBinding.descriptorCount = 1;
+    objectsBufferBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    VkDescriptorSetLayoutCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    createInfo.bindingCount = 1;
+    createInfo.pBindings = &objectsBufferBinding;
+
+    const VkResult result = vkCreateDescriptorSetLayout(
+        m_logicalDevice,
+        &createInfo,
+        m_allocator,
+        &m_descriptorSetLayoutObjectsBuffer);
+
+    if (result != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create descriptor set layout");
+    }
 }

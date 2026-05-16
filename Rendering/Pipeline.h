@@ -25,33 +25,16 @@ public:
         return m_pipelineLayout;
     }
 
-    [[nodiscard]] VkDescriptorSetLayout getDescriptorSetLayout() const
-    {
-        return m_descriptorSetLayout;
-    }
-
     [[nodiscard]] VkPipeline getPipeline() const
     {
         return m_pipeline;
     }
 
-    [[nodiscard]] VkDescriptorSetLayout getDescriptorSetLayoutObjectsBuffer() const
-    {
-        return m_descriptorSetLayoutObjectsBuffer;
-    }
-
 private:
     std::shared_ptr<VulkanResources> m_vulkanResources;
 
-    VkDescriptorSetLayout m_descriptorSetLayout = VK_NULL_HANDLE;
-    VkDescriptorSetLayout m_descriptorSetLayoutObjectsBuffer = VK_NULL_HANDLE;
-    VkDescriptorPool m_descriptorPool = VK_NULL_HANDLE;
-
     VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
     VkPipeline m_pipeline;
-
-    void initializeDescriptorSetLayout();
-    void initializeObjectsBufferLayout();
 };
 
 #endif //PIPELINE_H
