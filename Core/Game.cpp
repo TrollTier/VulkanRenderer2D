@@ -200,7 +200,7 @@ void Game::RunLoop()
 		glfwPollEvents();
 
 		const auto startOfFrame = std::chrono::high_resolution_clock::now();
-		auto startOfCurrentUpdate = std::chrono::high_resolution_clock::now();
+		const auto startOfCurrentUpdate = std::chrono::high_resolution_clock::now();
 
 		const std::chrono::duration<float, std::milli> durationSinceLastUpdate =
 			startOfCurrentUpdate - startOfLastUpdate;

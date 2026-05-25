@@ -16,6 +16,7 @@ VulkanResources::~VulkanResources()
 {
     m_swapchain.reset();
 
+    vkDestroyPipelineLayout(m_logicalDevice, m_pipelineLayout, m_allocator);
     vkDestroyDescriptorSetLayout(m_logicalDevice, m_descriptorSetLayout, m_allocator);
     vkDestroyDescriptorSetLayout(m_logicalDevice, m_descriptorSetLayoutObjectsBuffer, m_allocator);
     vkDestroyDescriptorPool(m_logicalDevice, m_descriptorPool, m_allocator);
@@ -66,6 +67,7 @@ void VulkanResources::initialize(
     initializeDescriptorPool();
     initializeDescriptorSetLayout();
     initializeObjectsBufferLayout();
+    initializePipelineLayout();
 }
 
 void VulkanResources::initializeInstance(
@@ -365,3 +367,24 @@ void VulkanResources::initializeObjectsBufferLayout()
         throw std::runtime_error("failed to create descriptor set layout");
     }
 }
+
+void VulkanResources::initializePipelineLayout()
+{
+    std::vector<VkDescriptorSetLayout> layouts(2);
+    layouts[0] = m_descriptorSetLayout;
+    layouts[1] = m_descriptorSetLayoutObjectsBuffer;
+
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
+    pipelineLayoutInfo.setLayoutCount = layouts.size();
+    pipelineLayoutInfo.pSetLayouts = layouts.data();
+
+    if (vkCreatePipelineLayout(
+            m_logicalDevice,
+            &pipelineLayoutInfo,
+            m_allocator,
+            &m_pipelineLayout) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create pipeline layout");
+    }
+}
+

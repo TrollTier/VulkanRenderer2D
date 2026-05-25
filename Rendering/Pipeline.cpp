@@ -48,7 +48,6 @@ Pipeline::~Pipeline()
     const auto allocator = m_vulkanResources->m_allocator;
 
     vkDestroyPipeline(device, m_pipeline, allocator);
-    vkDestroyPipelineLayout(device, m_pipelineLayout, allocator);
 }
 
 Pipeline::Pipeline(
@@ -144,23 +143,6 @@ Pipeline::Pipeline(
     dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicState.pDynamicStates = dynamicStates.data();
 
-    std::vector<VkDescriptorSetLayout> layouts(2);
-    layouts[0] = m_vulkanResources->m_descriptorSetLayout;
-    layouts[1] = m_vulkanResources->m_descriptorSetLayoutObjectsBuffer;
-
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-    pipelineLayoutInfo.setLayoutCount = layouts.size();
-    pipelineLayoutInfo.pSetLayouts = layouts.data();
-
-    if (vkCreatePipelineLayout(
-            resources->m_logicalDevice,
-            &pipelineLayoutInfo,
-            resources->m_allocator,
-            &m_pipelineLayout) != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to create pipeline layout");
-    }
-
     const auto colorFormat = swapchainImageFormat;
     VkPipelineRenderingCreateInfo renderingInfo{ VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
     renderingInfo.colorAttachmentCount = 1;
@@ -178,7 +160,7 @@ Pipeline::Pipeline(
     graphicsPipelineCreateInfo.pViewportState = &viewportState;
     graphicsPipelineCreateInfo.pColorBlendState = &colorBlending;
     graphicsPipelineCreateInfo.pDynamicState = &dynamicState;
-    graphicsPipelineCreateInfo.layout = m_pipelineLayout;
+    graphicsPipelineCreateInfo.layout = resources->m_pipelineLayout;
     graphicsPipelineCreateInfo.renderPass = VK_NULL_HANDLE; // because we're using dynamic rendering
     graphicsPipelineCreateInfo.subpass = 0;
     graphicsPipelineCreateInfo.pMultisampleState = &multisampling;

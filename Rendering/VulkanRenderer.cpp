@@ -524,7 +524,7 @@ void VulkanRenderer::drawScene(
     vkCmdBindDescriptorSets(
         currentImageElement->commandBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
-        m_pipeline->getLayout(),
+        m_vulkanResources->m_pipelineLayout,
         0,
         descriptorSets.size(),
         descriptorSets.data(),

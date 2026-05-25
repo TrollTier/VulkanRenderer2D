@@ -20,11 +20,6 @@ public:
         std::string fragmentShaderPath,
         VkFormat swapchainImageFormat);
 
-    [[nodiscard]] VkPipelineLayout getLayout() const
-    {
-        return m_pipelineLayout;
-    }
-
     [[nodiscard]] VkPipeline getPipeline() const
     {
         return m_pipeline;
@@ -32,8 +27,6 @@ public:
 
 private:
     std::shared_ptr<VulkanResources> m_vulkanResources;
-
-    VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
     VkPipeline m_pipeline;
 };
 
