@@ -5,73 +5,28 @@
 #include "Pipeline.h"
 
 #include <array>
-#include <fstream>
-
-#include "CameraUniformData.h"
-#include "VulkanHelpers.h"
 #include "../Core/Vertex.h"
-
-static std::vector<char> readFile(const std::string& fileName) {
-    std::ifstream file(fileName, std::ios::ate | std::ios::binary);
-
-    if (!file.is_open()) {
-        throw std::runtime_error("failed to open file");
-    }
-
-    size_t fileSize = (size_t)file.tellg();
-    std::vector<char> buffer(fileSize);
-
-    file.seekg(0);
-    file.read(buffer.data(), fileSize);
-
-    file.close();
-    return buffer;
-}
-
-VkShaderModule createShaderModule(VkDevice device, const std::vector<char>& code) {
-    VkShaderModuleCreateInfo createInfo{};
-    createInfo.codeSize = code.size();
-    createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
-    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-
-    VkShaderModule module;
-    if (vkCreateShaderModule(device, &createInfo, nullptr, &module) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create shader module");
-    }
-
-    return module;
-}
 
 Pipeline::~Pipeline()
 {
-    const auto device = m_vulkanResources->m_logicalDevice;
-    const auto allocator = m_vulkanResources->m_allocator;
-
-    vkDestroyPipeline(device, m_pipeline, allocator);
+    vkDestroyPipeline(m_vulkanResources->m_logicalDevice, m_pipeline, m_vulkanResources->m_allocator);
 }
 
 Pipeline::Pipeline(
     std::shared_ptr<VulkanResources> resources,
-    std::string vertexShaderPath,
-    std::string fragmentShaderPath,
+    const Shader& shader,
     VkFormat swapchainImageFormat)
 {
     m_vulkanResources = resources;
 
-    auto vertShaderCode = readFile(vertexShaderPath);
-    auto fragShaderCode = readFile(fragmentShaderPath);
-
-    VkShaderModule vertShaderModule = createShaderModule(resources->m_logicalDevice, vertShaderCode);
-    VkShaderModule fragShaderModule = createShaderModule(resources->m_logicalDevice, fragShaderCode);
-
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
-    vertShaderStageInfo.module = vertShaderModule;
+    vertShaderStageInfo.module = shader.getVertexShaderModule();
     vertShaderStageInfo.pName = "main";
     vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 
     VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-    fragShaderStageInfo.module = fragShaderModule;
+    fragShaderStageInfo.module = shader.getFragmentShaderModule();
     fragShaderStageInfo.pName = "main";
     fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -175,9 +130,6 @@ Pipeline::Pipeline(
     {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
-
-    vkDestroyShaderModule(resources->m_logicalDevice, vertShaderModule, resources->m_allocator);
-    vkDestroyShaderModule(resources->m_logicalDevice, fragShaderModule, resources->m_allocator);
 }
 
 

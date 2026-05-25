@@ -70,10 +70,14 @@ void VulkanRenderer::initialize()
 {
     const auto swapchain = m_vulkanResources->getSwapchain().lock();
 
+    const Shader shader(
+        m_vulkanResources->m_logicalDevice,
+        "../Shaders/vert.spv",
+        "../Shaders/frag.spv");
+
     m_pipeline = std::make_unique<Pipeline>(
         m_vulkanResources,
-        "../Shaders/vert.spv",
-        "../Shaders/frag.spv",
+        shader,
         swapchain->m_format.format);
 
     initializeSampler();

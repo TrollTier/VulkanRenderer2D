@@ -17,8 +17,8 @@ public:
         const std::filesystem::path& fragmentShaderPath);
     ~Shader();
 
-    VkShaderModule getFragmentShaderModule() const;
-    VkShaderModule getVertexShaderModule() const;
+    [[nodiscard]] VkShaderModule getFragmentShaderModule() const;
+    [[nodiscard]] VkShaderModule getVertexShaderModule() const;
 
 private:
     VkDevice m_device;

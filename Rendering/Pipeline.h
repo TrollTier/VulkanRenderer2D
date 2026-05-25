@@ -4,11 +4,11 @@
 
 #ifndef PIPELINE_H
 #define PIPELINE_H
+
 #include <memory>
 #include <vulkan/vulkan.h>
-
-#include "InstanceData.h"
 #include "VulkanResources.h"
+#include "Shader.h"
 
 class Pipeline
 {
@@ -16,8 +16,7 @@ public:
     ~Pipeline();
     Pipeline(
         std::shared_ptr<VulkanResources> resources,
-        std::string vertexShaderPath,
-        std::string fragmentShaderPath,
+        const Shader& shader,
         VkFormat swapchainImageFormat);
 
     [[nodiscard]] VkPipeline getPipeline() const
