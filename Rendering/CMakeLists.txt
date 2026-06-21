@@ -21,6 +21,7 @@ add_library(Rendering STATIC
         ImageRect.h
         Shader.cpp
         Shader.h
+        Material.h
 )
 
 target_link_libraries(Rendering PRIVATE Vulkan::Vulkan glfw ImGui)

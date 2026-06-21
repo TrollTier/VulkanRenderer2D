@@ -56,7 +56,7 @@ private:
     std::vector<VkDescriptorSet> m_defaultDescriptorSets;
 
     std::shared_ptr<VulkanResources> m_vulkanResources;
-    std::unique_ptr<Pipeline> m_pipeline;
+    std::vector<std::unique_ptr<Pipeline>> m_pipelines {};
 
     std::vector<std::unique_ptr<Mesh>> m_meshes;
     std::vector<std::unique_ptr<Texture2D>> m_textures;

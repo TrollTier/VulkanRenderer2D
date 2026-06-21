@@ -72,13 +72,14 @@ void VulkanRenderer::initialize()
 
     const Shader shader(
         m_vulkanResources->m_logicalDevice,
-        "../Shaders/vert.spv",
-        "../Shaders/frag.spv");
+        "../Assets/Shaders/vert.spv",
+        "../Assets/Shaders/frag.spv");
 
-    m_pipeline = std::make_unique<Pipeline>(
-        m_vulkanResources,
-        shader,
-        swapchain->m_format.format);
+    m_pipelines.emplace_back(
+        std::make_unique<Pipeline>(
+            m_vulkanResources,
+            shader,
+            swapchain->m_format.format));
 
     initializeSampler();
     initializeDefaultMeshes();
@@ -515,42 +516,45 @@ void VulkanRenderer::drawScene(
     };
     vkCmdSetScissor(currentImageElement->commandBuffer, 0, 1, &scissor);
 
-    vkCmdBindPipeline(
-        currentImageElement->commandBuffer,
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
-        m_pipeline->getPipeline());
+    for (const auto& pipeline: m_pipelines)
+    {
+        vkCmdBindPipeline(
+           currentImageElement->commandBuffer,
+           VK_PIPELINE_BIND_POINT_GRAPHICS,
+           pipeline->getPipeline());
 
-    std::vector<VkDescriptorSet> descriptorSets{};
-    descriptorSets.push_back(m_defaultDescriptorSets[swapchain->getCurrentFrameIndex()]);
-    descriptorSets.push_back(m_objectBufferDescriptors[swapchain->getCurrentFrameIndex()]);
+        std::vector<VkDescriptorSet> descriptorSets{};
+        descriptorSets.push_back(m_defaultDescriptorSets[swapchain->getCurrentFrameIndex()]);
+        descriptorSets.push_back(m_objectBufferDescriptors[swapchain->getCurrentFrameIndex()]);
 
-    // Bind global descriptor set
-    vkCmdBindDescriptorSets(
-        currentImageElement->commandBuffer,
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
-        m_vulkanResources->m_pipelineLayout,
-        0,
-        descriptorSets.size(),
-        descriptorSets.data(),
-        0,
-        nullptr
-    );
+        // Bind global descriptor set
+        vkCmdBindDescriptorSets(
+            currentImageElement->commandBuffer,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            m_vulkanResources->m_pipelineLayout,
+            0,
+            descriptorSets.size(),
+            descriptorSets.data(),
+            0,
+            nullptr
+        );
 
-    const Mesh& mesh = *m_meshes[0];
+        const Mesh& mesh = *m_meshes[0];
 
-    const size_t meshIndex = mesh.getMeshIndex();
-    VkBuffer vertexBuffers[] = { m_vertexBuffers[meshIndex]->getBuffer() };
-    VkDeviceSize offsets[] = { 0 };
-    vkCmdBindVertexBuffers(currentImageElement->commandBuffer, 0, 1, vertexBuffers, offsets);
-    vkCmdBindIndexBuffer(currentImageElement->commandBuffer, m_indexBuffers[meshIndex]->getBuffer(), 0, VK_INDEX_TYPE_UINT16);
+        const size_t meshIndex = mesh.getMeshIndex();
+        VkBuffer vertexBuffers[] = { m_vertexBuffers[meshIndex]->getBuffer() };
+        VkDeviceSize offsets[] = { 0 };
+        vkCmdBindVertexBuffers(currentImageElement->commandBuffer, 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(currentImageElement->commandBuffer, m_indexBuffers[meshIndex]->getBuffer(), 0, VK_INDEX_TYPE_UINT16);
 
-    vkCmdDrawIndexed(
-        currentImageElement->commandBuffer,
-        mesh.getIndices().size(),
-        objectsToDraw,
-        0,
-        0,
-        0);
+        vkCmdDrawIndexed(
+            currentImageElement->commandBuffer,
+            mesh.getIndices().size(),
+            objectsToDraw,
+            0,
+            0,
+            0);
+    }
 
     if (uiData)
     {
