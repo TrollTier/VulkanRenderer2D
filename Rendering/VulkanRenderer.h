@@ -8,6 +8,8 @@
 #include <vector>
 
 #include "Buffer.h"
+#include "Circle.h"
+#include "ObjectBuffer.h"
 #include "Pipeline.h"
 #include "Swapchain.h"
 #include "Texture2D.h"
@@ -65,13 +67,9 @@ private:
     std::vector<std::unique_ptr<Buffer>> m_indexBuffers{1};
     std::vector<std::unique_ptr<Buffer>> m_cameraBuffers{};
 
-    std::vector<std::unique_ptr<Buffer>> m_objectStagingBuffers{};
-    std::vector<std::unique_ptr<Buffer>> m_objectBuffers{};
-    std::vector<VkDescriptorSet> m_objectBufferDescriptors{};
+    std::unique_ptr<ObjectBuffer<DrawParameters>> m_gameObjectBuffer{};
 
     VkSampler m_sampler = VK_NULL_HANDLE;
-
-    std::vector<DrawParameters> m_drawParameters{10000};
     size_t m_currentDrawIndex = 0;
 
     void initializeSampler();

@@ -9,7 +9,6 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
 #include <iostream>
-#include <bits/unordered_map.h>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "CameraUniformData.h"
@@ -31,7 +30,6 @@ VulkanRenderer::VulkanRenderer(
     m_assetsBasePath = assetsBasePath;
     m_vulkanResources = resources;
     m_pixelsPerUnit = pixelsPerUnit;
-    m_drawParameters.clear();
 }
 
 VulkanRenderer::~VulkanRenderer()
@@ -42,19 +40,11 @@ VulkanRenderer::~VulkanRenderer()
 
     vkDeviceWaitIdle(device);
 
-    m_objectBuffers.clear();
     m_cameraBuffers.clear();
-    m_objectStagingBuffers.clear();
     m_textures.clear();
     m_vertexBuffers.clear();
     m_indexBuffers.clear();
-
-    vkFreeDescriptorSets(
-            device,
-            descriptorPool,
-            m_objectBufferDescriptors.size(),
-            m_objectBufferDescriptors.data());
-    m_objectBufferDescriptors.clear();
+    m_pipelines.clear();
 
     vkFreeDescriptorSets(
         device,
@@ -87,26 +77,6 @@ void VulkanRenderer::initialize()
     const auto imageCount = swapchain->getImageCount();
     m_cameraBuffers.reserve(imageCount);
     m_defaultDescriptorSets.resize(imageCount);
-    m_objectBufferDescriptors.resize(imageCount);
-
-    const auto objectBufferLayout = m_vulkanResources->m_descriptorSetLayoutObjectsBuffer;
-    std::vector<VkDescriptorSetLayout> descriptorSetLayouts{imageCount, objectBufferLayout};
-
-    VkDescriptorSetAllocateInfo objectBufferInfo = {};
-    objectBufferInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    objectBufferInfo.descriptorSetCount = imageCount;
-    objectBufferInfo.descriptorPool = m_vulkanResources->m_descriptorPool;
-    objectBufferInfo.pSetLayouts = descriptorSetLayouts.data();
-
-    const VkResult result = vkAllocateDescriptorSets(
-            m_vulkanResources->m_logicalDevice,
-            &objectBufferInfo,
-            m_objectBufferDescriptors.data());
-
-    if (result != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to allocate object buffer descriptor sets!");
-    }
 
     for (int i = 0; i < imageCount; i++)
     {
@@ -116,42 +86,12 @@ void VulkanRenderer::initialize()
                 sizeof(CameraUniformData),
                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
-
-        m_objectStagingBuffers.emplace_back(
-            std::make_unique<Buffer>(
-                m_vulkanResources,
-                sizeof(InstanceData) * 10000,
-                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
-
-        m_objectBuffers.emplace_back(
-            std::make_unique<Buffer>(
-                m_vulkanResources,
-                sizeof(InstanceData) * 10000,
-                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
-
-        VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = m_objectBuffers[i]->getBuffer();
-        bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(InstanceData) * 10000;
-
-        VkWriteDescriptorSet writeDescriptorSet{};
-        writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        writeDescriptorSet.dstSet = m_objectBufferDescriptors[i];
-        writeDescriptorSet.dstBinding = 0;
-        writeDescriptorSet.dstArrayElement = 0;
-        writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        writeDescriptorSet.descriptorCount = 1;
-        writeDescriptorSet.pBufferInfo = &bufferInfo;
-
-        vkUpdateDescriptorSets(
-            m_vulkanResources->m_logicalDevice,
-            1,
-            &writeDescriptorSet,
-            0,
-            nullptr);
     }
+
+    m_gameObjectBuffer = std::make_unique<ObjectBuffer<DrawParameters>>(
+        m_vulkanResources,
+        imageCount,
+        10000);
 }
 
 void VulkanRenderer::initializeDefaultMeshes()
@@ -336,7 +276,7 @@ void VulkanRenderer::drawSprite(
         .frameIndex =  sprite.currentFrame,
     };
 
-    m_drawParameters.emplace_back(params);
+    m_gameObjectBuffer->m_data.emplace_back(params);
 }
 
 
@@ -363,19 +303,20 @@ uint32_t VulkanRenderer::updateObjectsBuffer(
         throw std::runtime_error("failed to begin recording command buffer!");
     }
 
-    const auto& objectBuffer = m_objectBuffers[imageIndex];
+    const auto& objectBuffer = m_gameObjectBuffer->m_objectBuffers[imageIndex];
 
-    const auto& stagingBuffer = *m_objectStagingBuffers[imageIndex];
+    const auto& stagingBuffer = *m_gameObjectBuffer->m_objectStagingBuffers[imageIndex];
     const auto objectSSBO = (InstanceData*)stagingBuffer.mapMemory(stagingBuffer.getSize());
+    const auto& data = m_gameObjectBuffer->m_data;
 
     const auto& frustum = camera.getFrustum();
     const auto offset = glm::vec3(frustum.x, frustum.y, 0);
 
-    for (size_t i = 0; i < m_drawParameters.size(); i++)
+    for (size_t i = 0; i < data.size(); i++)
     {
-        const auto& drawParameter = m_drawParameters[i];
-
+        const auto& drawParameter = data[i];
         const auto& texture = *m_textures[drawParameter.textureIndex];
+
         const glm::vec3 screenPosition = glm::vec3(
              (static_cast<float>(drawParameter.worldPosition.x) - offset.x) * static_cast<float>(m_pixelsPerUnit),
              (static_cast<float>(drawParameter.worldPosition.y) - offset.y) * static_cast<float>(m_pixelsPerUnit),
@@ -388,8 +329,8 @@ uint32_t VulkanRenderer::updateObjectsBuffer(
         objectSSBO[i].textureIndex = drawParameter.textureIndex;
     }
 
+    const auto stagingBufferSize = sizeof(InstanceData) * data.size();
     stagingBuffer.unmapMemory();
-    const auto stagingBufferSize = sizeof(InstanceData) * m_drawParameters.size();
 
     VkBufferCopy copyRegion{};
     copyRegion.srcOffset = 0;
@@ -406,7 +347,7 @@ uint32_t VulkanRenderer::updateObjectsBuffer(
     vkQueueSubmit(m_vulkanResources->m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(m_vulkanResources->m_graphicsQueue);
 
-    return m_drawParameters.size();
+    return data.size();
 }
 
 void VulkanRenderer::drawScene(
@@ -525,7 +466,7 @@ void VulkanRenderer::drawScene(
 
         std::vector<VkDescriptorSet> descriptorSets{};
         descriptorSets.push_back(m_defaultDescriptorSets[swapchain->getCurrentFrameIndex()]);
-        descriptorSets.push_back(m_objectBufferDescriptors[swapchain->getCurrentFrameIndex()]);
+        descriptorSets.push_back(m_gameObjectBuffer->m_objectBufferDescriptors[swapchain->getCurrentFrameIndex()]);
 
         // Bind global descriptor set
         vkCmdBindDescriptorSets(
@@ -540,8 +481,8 @@ void VulkanRenderer::drawScene(
         );
 
         const Mesh& mesh = *m_meshes[0];
-
         const size_t meshIndex = mesh.getMeshIndex();
+
         VkBuffer vertexBuffers[] = { m_vertexBuffers[meshIndex]->getBuffer() };
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(currentImageElement->commandBuffer, 0, 1, vertexBuffers, offsets);
@@ -607,7 +548,7 @@ void VulkanRenderer::drawScene(
     }
 
     swapchain->moveToNextFrame();
-    m_drawParameters.clear();
+    m_gameObjectBuffer->m_data.clear();
 }
 
 void VulkanRenderer::imageToAttachmentLayout(SwapchainElement *element)

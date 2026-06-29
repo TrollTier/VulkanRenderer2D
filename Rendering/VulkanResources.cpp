@@ -325,7 +325,7 @@ void VulkanResources::initializeDescriptorSetLayout()
     samplerBinding.pImmutableSamplers = nullptr;
     samplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    std::array<VkDescriptorSetLayoutBinding, 2> bindings = { cameraBinding, samplerBinding };
+    std::array bindings = { cameraBinding, samplerBinding };
     VkDescriptorSetLayoutCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
