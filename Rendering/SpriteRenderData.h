@@ -9,7 +9,7 @@
 
 #include "ImageRect.h"
 
-struct InstanceData {
+struct SpriteRenderData {
     glm::mat4 modelMatrix;  // 64 bytes  64
     ImageRect spriteFrame;  // 16 bytes  80
     uint32_t textureIndex;  //  4 bytes  84

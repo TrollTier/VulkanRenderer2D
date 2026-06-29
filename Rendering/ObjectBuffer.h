@@ -16,6 +16,7 @@ public:
     std::vector<std::unique_ptr<Buffer>> m_objectBuffers{};
     std::vector<VkDescriptorSet> m_objectBufferDescriptors{};
     std::vector<T> m_data{};
+    size_t m_dataSize = 0;
 
     ObjectBuffer(
         const std::weak_ptr<VulkanResources>& vulkanResources,
@@ -24,7 +25,7 @@ public:
     {
         m_vulkanResources = vulkanResources;
         m_images = images;
-        m_data.reserve(bufferSize);
+        m_data.resize(bufferSize);
         m_objectBufferDescriptors.reserve(images);
         m_objectBuffers.reserve(images);
         m_objectStagingBuffers.reserve(images);
@@ -113,6 +114,41 @@ public:
 
         m_objectBufferDescriptors.clear();
         m_data.clear();
+    }
+
+    void UpdateGpuBuffer(
+        VkCommandBuffer commandBuffer,
+        VkQueue queue,
+        size_t imageIndex) const
+    {
+        VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to begin recording command buffer!");
+        }
+
+        const auto& objectBuffer = m_objectBuffers[imageIndex];
+        const auto& stagingBuffer = *m_objectStagingBuffers[imageIndex];
+        const auto& data = m_data;
+
+        const auto stagingBufferSize = sizeof(T) * m_dataSize;
+        stagingBuffer.writeData(data.data(), stagingBufferSize);
+
+        VkBufferCopy copyRegion{};
+        copyRegion.srcOffset = 0;
+        copyRegion.dstOffset = 0;
+        copyRegion.size = stagingBufferSize;
+
+        vkCmdCopyBuffer(commandBuffer, stagingBuffer.getBuffer(), objectBuffer->getBuffer(), 1, &copyRegion);
+        vkEndCommandBuffer(commandBuffer);
+
+        VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;
+
+        vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
     }
 
 private:

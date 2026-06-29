@@ -1,8 +1,8 @@
 #version 450
 
 struct Circle {
-    vec3 color;
-    vec2 position;
+    vec4 color;
+    vec4 position;
     float radius;
 };
 
@@ -14,18 +14,17 @@ layout(std430, set = 1, binding = 0) readonly buffer CircleBuffer {
 } circleBuffer;
 
 layout(location = 0) out vec3 fragColor;
-layout(location = 1) out vec2 texCoord;
-layout(location = 2) out vec2 outPosition;
+layout(location = 1) out vec3 texCoord;
+layout(location = 2) out vec3 outPosition;
 layout(location = 3) out float radius;
 
 void main() {
     Circle circle = circleBuffer.circles[gl_InstanceIndex];
 
-    vec4 position = vec4(circle.position, 1.0, 1.0) * vec4(inPosition, 1.0);
-    gl_Position = position;
+    gl_Position = vec4(inPosition, 1.0);
 
-    fragColor = circle.color;
-    texCoord = inTexCoord.xy;
-    outPosition = circle.position;
+    fragColor = circle.color.xyz;
+    texCoord = vec3(inTexCoord, 0);
+    outPosition = circle.position.xyz;
     radius = circle.radius;
 }

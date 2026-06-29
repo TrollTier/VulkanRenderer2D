@@ -384,89 +384,89 @@ void Editor::setSelectedTile()
 
 void Editor::drawMap()
 {
-	const auto& frustum = m_camera->getFrustum();
-
-	const auto& tiles = m_map->getTiles();
-	const auto& gameObjects = m_world->getGameObjects();
-
-	const glm::vec3 scale{PIXELS_PER_UNIT, PIXELS_PER_UNIT, 1 };
-
-	for (const auto& tile : tiles)
-	{
-		if (static_cast<float>(tile.column + 1) < frustum.x || static_cast<float>(tile.column) > frustum.toX ||
-			static_cast<float>(tile.row + 1) < frustum.y || static_cast<float>(tile.row) > frustum.toY)
-		{
-			continue;
-		}
-
-		const glm::vec3 worldPos = glm::vec3(tile.column, tile.row, 1);
-
-		for (const auto& layer : tile.tileLayers)
-		{
-			m_renderer->drawSprite(worldPos, scale, layer.sprite);
-		}
-	}
-
-	for (const auto& gameObject : gameObjects)
-	{
-		const auto worldPosition = gameObject.getWorldPosition();
-
-		if ((worldPosition.x + 1) < frustum.x || worldPosition.x > frustum.toX ||
-			(worldPosition.y + 1) < frustum.y || worldPosition.y > frustum.toY)
-		{
-			continue;
-		}
-
-		if (gameObject.getAnimatorIndex().has_value())
-		{
-			const auto animatorIndex = gameObject.getAnimatorIndex().value();
-			const auto& animator = m_world->getAnimationSystem().getAnimator(animatorIndex);
-			const auto& animationData =
-				m_world->getAnimationSystem().getAnimationData(animator.m_animationDataIndex);
-
-			const Sprite sprite = Sprite
-			{
-				.textureIndex = gameObject.getSprite().textureIndex,
-				.currentFrame = animationData->keyFrames[animator.m_currentKeyFrame].frame
-			};
-
-			m_renderer->drawSprite(worldPosition, scale, sprite);
-		}
-		else
-		{
-			m_renderer->drawSprite(worldPosition, scale, gameObject.getSprite());
-		}
-	}
-
-	if (m_selectedTileType > 0)
-	{
-		const auto& type = TileTypes[m_selectedTileType];
-		size_t atlasTextureIndex = -1;
-		bool textureIndexFound = false;
-
-		for (size_t i = 0; i < m_atlasEntries.size() && !textureIndexFound; i++)
-		{
-			if (m_atlasEntries[i].id == type.textureAtlasEntryId)
-			{
-				atlasTextureIndex = i;
-				textureIndexFound = true;
-			}
-		}
-
-		if (!textureIndexFound)
-		{
-			return;
-		}
-
-		const auto mouseInWorld = mouseToWorld();
-		m_renderer->drawSprite(
-			mouseInWorld,
-			scale,
-			{
-				.textureIndex = atlasTextureIndex,
-				.currentFrame = m_selectedFrame
-			});
-	}
+	// const auto& frustum = m_camera->getFrustum();
+	//
+	// const auto& tiles = m_map->getTiles();
+	// const auto& gameObjects = m_world->getGameObjects();
+	//
+	// const glm::vec3 scale{PIXELS_PER_UNIT, PIXELS_PER_UNIT, 1 };
+	//
+	// for (const auto& tile : tiles)
+	// {
+	// 	if (static_cast<float>(tile.column + 1) < frustum.x || static_cast<float>(tile.column) > frustum.toX ||
+	// 		static_cast<float>(tile.row + 1) < frustum.y || static_cast<float>(tile.row) > frustum.toY)
+	// 	{
+	// 		continue;
+	// 	}
+	//
+	// 	const glm::vec3 worldPos = glm::vec3(tile.column, tile.row, 1);
+	//
+	// 	for (const auto& layer : tile.tileLayers)
+	// 	{
+	// 		m_renderer->drawSprite(worldPos, scale, layer.sprite);
+	// 	}
+	// }
+	//
+	// for (const auto& gameObject : gameObjects)
+	// {
+	// 	const auto worldPosition = gameObject.getWorldPosition();
+	//
+	// 	if ((worldPosition.x + 1) < frustum.x || worldPosition.x > frustum.toX ||
+	// 		(worldPosition.y + 1) < frustum.y || worldPosition.y > frustum.toY)
+	// 	{
+	// 		continue;
+	// 	}
+	//
+	// 	if (gameObject.getAnimatorIndex().has_value())
+	// 	{
+	// 		const auto animatorIndex = gameObject.getAnimatorIndex().value();
+	// 		const auto& animator = m_world->getAnimationSystem().getAnimator(animatorIndex);
+	// 		const auto& animationData =
+	// 			m_world->getAnimationSystem().getAnimationData(animator.m_animationDataIndex);
+	//
+	// 		const Sprite sprite = Sprite
+	// 		{
+	// 			.textureIndex = gameObject.getSprite().textureIndex,
+	// 			.currentFrame = animationData->keyFrames[animator.m_currentKeyFrame].frame
+	// 		};
+	//
+	// 		m_renderer->drawSprite(worldPosition, scale, sprite);
+	// 	}
+	// 	else
+	// 	{
+	// 		m_renderer->drawSprite(worldPosition, scale, gameObject.getSprite());
+	// 	}
+	// }
+	//
+	// if (m_selectedTileType > 0)
+	// {
+	// 	const auto& type = TileTypes[m_selectedTileType];
+	// 	size_t atlasTextureIndex = -1;
+	// 	bool textureIndexFound = false;
+	//
+	// 	for (size_t i = 0; i < m_atlasEntries.size() && !textureIndexFound; i++)
+	// 	{
+	// 		if (m_atlasEntries[i].id == type.textureAtlasEntryId)
+	// 		{
+	// 			atlasTextureIndex = i;
+	// 			textureIndexFound = true;
+	// 		}
+	// 	}
+	//
+	// 	if (!textureIndexFound)
+	// 	{
+	// 		return;
+	// 	}
+	//
+	// 	const auto mouseInWorld = mouseToWorld();
+	// 	m_renderer->drawSprite(
+	// 		mouseInWorld,
+	// 		scale,
+	// 		{
+	// 			.textureIndex = atlasTextureIndex,
+	// 			.currentFrame = m_selectedFrame
+	// 		});
+	// }
 }
 
 

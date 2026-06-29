@@ -242,11 +242,14 @@ void Game::RunLoop()
 void Game::drawMap()
 {
 	const auto& frustum = m_camera->getFrustum();
+	const auto offset = glm::vec3(frustum.x, frustum.y, 0);
 
 	const auto& tiles = m_map->getTiles();
 	const auto& gameObjects = m_world->getGameObjects();
 
 	const glm::vec3 scale{PIXELS_PER_UNIT, PIXELS_PER_UNIT, 1 };
+
+	size_t objectIndex = 0;
 
 	for (const auto& tile : tiles)
 	{
@@ -260,7 +263,8 @@ void Game::drawMap()
 
 		for (const auto& layer : tile.tileLayers)
 		{
-			m_renderer->drawSprite(worldPos, scale, layer.sprite);
+			m_renderer->drawSprite(objectIndex, worldPos, scale, layer.sprite, offset);
+			objectIndex++;
 		}
 	}
 
@@ -287,11 +291,13 @@ void Game::drawMap()
 				.currentFrame = animationData->keyFrames[animator.m_currentKeyFrame].frame
 			};
 
-			m_renderer->drawSprite(worldPosition, scale, sprite);
+			m_renderer->drawSprite(objectIndex, worldPosition, scale, sprite, offset);
+			objectIndex++;
 		}
 		else
 		{
-			m_renderer->drawSprite(worldPosition, scale, gameObject.getSprite());
+			m_renderer->drawSprite(objectIndex, worldPosition, scale, gameObject.getSprite(), offset);
+			objectIndex++;
 		}
 	}
 }
