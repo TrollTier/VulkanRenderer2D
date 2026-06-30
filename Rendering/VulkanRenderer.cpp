@@ -108,12 +108,6 @@ void VulkanRenderer::initialize()
         m_vulkanResources,
         imageCount,
         100);
-
-    m_circleBuffer->m_data[0] = Circle(
-        glm::vec4(255, 0, 0, 0),
-        glm::vec4(0.5, 0.5, 0.0, 0),
-        0.05);
-    m_circleBuffer->m_dataSize = 1;
 }
 
 void VulkanRenderer::initializeDefaultMeshes()
