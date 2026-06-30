@@ -106,13 +106,16 @@ public:
 
         const auto resources = m_vulkanResources.lock();
 
-        vkFreeDescriptorSets(
-            resources->m_logicalDevice,
-            resources->m_descriptorPool,
-            m_objectBufferDescriptors.size(),
-            m_objectBufferDescriptors.data());
+        if (!m_objectBufferDescriptors.empty())
+        {
+            vkFreeDescriptorSets(
+                        resources->m_logicalDevice,
+                        resources->m_descriptorPool,
+                        m_objectBufferDescriptors.size(),
+                        m_objectBufferDescriptors.data());
+            m_objectBufferDescriptors.clear();
+        }
 
-        m_objectBufferDescriptors.clear();
         m_data.clear();
     }
 
