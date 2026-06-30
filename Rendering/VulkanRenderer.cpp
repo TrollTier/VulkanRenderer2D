@@ -111,8 +111,8 @@ void VulkanRenderer::initialize()
 
     m_circleBuffer->m_data[0] = Circle(
         glm::vec4(255, 0, 0, 0),
-        glm::vec4(0.0, 0.0, 0.0, 0),
-        0.5);
+        glm::vec4(0.5, 0.5, 0.0, 0),
+        0.05);
     m_circleBuffer->m_dataSize = 1;
 }
 
@@ -308,6 +308,11 @@ void VulkanRenderer::drawSprite(
     m_gameObjectBuffer->m_dataSize = std::max(objectIndex + 1, m_gameObjectBuffer->m_dataSize);
 }
 
+void VulkanRenderer::drawCircle(Circle circle)
+{
+    m_circleBuffer->append(circle);
+}
+
 
 void VulkanRenderer::updateCamera(const Camera& camera, size_t imageIndex)
 {
@@ -323,10 +328,10 @@ void VulkanRenderer::updateObjectBuffers(
     VkCommandBuffer commandBuffer,
     size_t imageIndex)
 {
-    m_gameObjectBuffer->UpdateGpuBuffer(commandBuffer, m_vulkanResources->m_graphicsQueue, imageIndex);
+    m_gameObjectBuffer->updateGpuBuffer(commandBuffer, m_vulkanResources->m_graphicsQueue, imageIndex);
     vkQueueWaitIdle(m_vulkanResources->m_graphicsQueue);
 
-    m_circleBuffer->UpdateGpuBuffer(commandBuffer, m_vulkanResources->m_graphicsQueue, imageIndex);
+    m_circleBuffer->updateGpuBuffer(commandBuffer, m_vulkanResources->m_graphicsQueue, imageIndex);
     vkQueueWaitIdle(m_vulkanResources->m_graphicsQueue);
 }
 

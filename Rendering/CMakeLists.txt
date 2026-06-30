@@ -14,7 +14,6 @@ add_library(Rendering STATIC
         Texture2D.cpp
         Texture2D.h
         ImageLoader.h
-        InstanceData.h
         CameraUniformData.h
         Buffer.cpp
         Buffer.h
@@ -24,6 +23,7 @@ add_library(Rendering STATIC
         Material.h
         Circle.h
         ObjectBuffer.h
+        SpriteRenderData.h
 )
 
 target_link_libraries(Rendering PRIVATE Vulkan::Vulkan glfw ImGui)

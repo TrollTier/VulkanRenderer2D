@@ -116,7 +116,7 @@ public:
         m_data.clear();
     }
 
-    void UpdateGpuBuffer(
+    void updateGpuBuffer(
         VkCommandBuffer commandBuffer,
         VkQueue queue,
         size_t imageIndex) const
@@ -149,6 +149,16 @@ public:
         submitInfo.pCommandBuffers = &commandBuffer;
 
         vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
+    }
+
+    void append(T data)
+    {
+        if (m_data.capacity() < m_dataSize + 1)
+        {
+            m_data.resize(m_data.capacity() * 2);
+        }
+
+        m_data[m_dataSize++] = data;
     }
 
 private:

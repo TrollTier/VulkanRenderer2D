@@ -50,6 +50,8 @@ public:
         const Sprite& sprite,
         const glm::vec3& cameraOffset);
 
+    void drawCircle(Circle circle);
+
 private:
     uint32_t m_pixelsPerUnit = 1;
     std::filesystem::path m_assetsBasePath;

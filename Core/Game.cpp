@@ -181,6 +181,14 @@ Game::Game()
 				break;
 			}
 
+			case MouseButton::Middle:
+			{
+				const auto x = static_cast<float>(data.x) / m_vulkanWindow->getWindowExtent().width;
+				const auto y = static_cast<float>(data.y) / m_vulkanWindow->getWindowExtent().height;
+				m_renderer->drawCircle(Circle(glm::vec4(255, 0, 0, 1), glm::vec4(x, y, 0, 0), 0.05));
+				break;
+			}
+
 			default: break;
 		}
 	};
@@ -310,10 +318,7 @@ void Game::drawSelectedCharacter()
 	}
 
 	const auto& objects = m_world->getGameObject(m_selectedGameObjectIndex);
-
-
 }
-
 
 glm::vec2 Game::screenToWorld(const glm::vec2& screenPos) const
 {

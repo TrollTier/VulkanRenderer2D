@@ -12,6 +12,7 @@ typedef struct Circle
     glm::vec4 color;
     glm::vec4 position;
     float radius;
+    float _pad[3];
 } Circle;
 
 #endif //CIRCLE_H
