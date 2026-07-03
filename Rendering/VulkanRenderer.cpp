@@ -99,7 +99,7 @@ void VulkanRenderer::initialize()
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
     }
 
-    m_gameObjectBuffer = std::make_unique<ObjectBuffer<SpriteRenderData>>(
+    m_spriteBuffer = std::make_unique<ObjectBuffer<SpriteRenderData>>(
         m_vulkanResources,
         imageCount,
         10000);
@@ -291,7 +291,7 @@ void VulkanRenderer::drawSprite(
          worldPosition.z);
 
     const auto& texture = *m_textures[sprite.textureIndex];
-    auto& spriteObject = m_gameObjectBuffer->m_data[objectIndex];
+    auto& spriteObject = m_spriteBuffer->m_data[objectIndex];
 
     spriteObject.modelMatrix =
         glm::translate(glm::mat4(1.0f), screenPosition) *
@@ -299,7 +299,7 @@ void VulkanRenderer::drawSprite(
     spriteObject.spriteFrame = texture.getFrame(sprite.currentFrame);
     spriteObject.textureIndex = sprite.textureIndex;
 
-    m_gameObjectBuffer->m_dataSize = std::max(objectIndex + 1, m_gameObjectBuffer->m_dataSize);
+    m_spriteBuffer->m_dataSize = std::max(objectIndex + 1, m_spriteBuffer->m_dataSize);
 }
 
 void VulkanRenderer::drawCircle(Circle circle)
@@ -322,7 +322,7 @@ void VulkanRenderer::updateObjectBuffers(
     VkCommandBuffer commandBuffer,
     size_t imageIndex)
 {
-    m_gameObjectBuffer->updateGpuBuffer(commandBuffer, m_vulkanResources->m_graphicsQueue, imageIndex);
+    m_spriteBuffer->updateGpuBuffer(commandBuffer, m_vulkanResources->m_graphicsQueue, imageIndex);
     vkQueueWaitIdle(m_vulkanResources->m_graphicsQueue);
 
     m_circleBuffer->updateGpuBuffer(commandBuffer, m_vulkanResources->m_graphicsQueue, imageIndex);
@@ -434,7 +434,7 @@ void VulkanRenderer::drawScene(
     const auto currentFrameIndex = swapchain->getCurrentFrameIndex();
 
     DrawIndexed(
-        *m_gameObjectBuffer,
+        *m_spriteBuffer,
         m_pipelines[0]->getPipeline(),
         currentImageElement,
         currentFrameIndex);
@@ -496,7 +496,7 @@ void VulkanRenderer::drawScene(
     }
 
     swapchain->moveToNextFrame();
-    m_gameObjectBuffer->m_data.clear();
+    m_spriteBuffer->m_data.clear();
 }
 
 void VulkanRenderer::imageToAttachmentLayout(SwapchainElement *element)
@@ -551,11 +551,6 @@ void VulkanRenderer::imageToPresentLayout(SwapchainElement *element)
         1,
         &afterBarrier
     );
-}
-
-void VulkanRenderer::beginScene()
-{
-    m_gameObjectBuffer->m_dataSize = 0;
 }
 
 

@@ -41,8 +41,6 @@ public:
 
     void setPixelsPerUnit(uint32_t pixelsPerUnit) { m_pixelsPerUnit = pixelsPerUnit; }
 
-    void beginScene();
-
     void drawSprite(
         size_t objectIndex,
         const glm::vec3& worldPosition,
@@ -67,7 +65,7 @@ private:
     std::vector<std::unique_ptr<Buffer>> m_indexBuffers{1};
     std::vector<std::unique_ptr<Buffer>> m_cameraBuffers{};
 
-    std::unique_ptr<ObjectBuffer<SpriteRenderData>> m_gameObjectBuffer{};
+    std::unique_ptr<ObjectBuffer<SpriteRenderData>> m_spriteBuffer{};
     std::unique_ptr<ObjectBuffer<Circle>> m_circleBuffer{};
 
     VkSampler m_sampler = VK_NULL_HANDLE;
