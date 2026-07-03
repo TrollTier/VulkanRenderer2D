@@ -30,11 +30,6 @@ public:
         m_objectBuffers.reserve(images);
         m_objectStagingBuffers.reserve(images);
 
-        if (m_vulkanResources.expired())
-        {
-            return;
-        }
-
         InitializeVulkanResources(bufferSize);
     }
 
@@ -97,6 +92,11 @@ private:
 
     void InitializeVulkanResources(size_t bufferSize)
     {
+        if (m_vulkanResources.expired())
+        {
+            return;
+        }
+
         const auto resources = m_vulkanResources.lock();
 
         const auto objectBufferLayout = resources->m_descriptorSetLayoutObjectsBuffer;
