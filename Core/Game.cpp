@@ -12,7 +12,7 @@
 
 Game::Game()
 {
-    glfwInit();
+	glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
     m_window = glfwCreateWindow(1280, 768, "Vulkan API Tutorial", nullptr, nullptr);

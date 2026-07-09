@@ -59,8 +59,21 @@ Buffer::~Buffer()
     }
 }
 
+void Buffer::clear() const
+{
+    void* mappedMemory = mapMemory(m_bufferSize);
+    memset(mappedMemory, 0, m_bufferSize);
+    unmapMemory();
+}
+
+
 void Buffer::writeData(const void *data, VkDeviceSize length) const
 {
+    if (length == 0)
+    {
+        return;
+    }
+
     if (m_properties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
     {
         void* mappedMemory = mapMemory(length);

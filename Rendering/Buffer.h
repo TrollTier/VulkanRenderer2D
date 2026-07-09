@@ -27,6 +27,7 @@ public:
     [[nodiscard]] void* mapMemory(VkDeviceSize length) const;
     void unmapMemory() const;
 
+    void clear() const;
     void writeData(const void* data, VkDeviceSize length) const;
 
 private:

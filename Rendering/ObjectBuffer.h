@@ -57,13 +57,21 @@ public:
         const auto& stagingBuffer = *m_objectStagingBuffers[imageIndex];
         const auto& data = m_data;
 
-        const auto stagingBufferSize = sizeof(T) * m_dataSize;
-        stagingBuffer.writeData(data.data(), stagingBufferSize);
-
         VkBufferCopy copyRegion{};
         copyRegion.srcOffset = 0;
         copyRegion.dstOffset = 0;
-        copyRegion.size = stagingBufferSize;
+
+        if (m_dataSize == 0)
+        {
+            stagingBuffer.clear();
+            copyRegion.size = stagingBuffer.getSize();
+        }
+        else
+        {
+            const auto stagingBufferSize = sizeof(T) * m_dataSize;
+            stagingBuffer.writeData(data.data(), stagingBufferSize);
+            copyRegion.size = stagingBufferSize;
+        }
 
         vkCmdCopyBuffer(commandBuffer, stagingBuffer.getBuffer(), objectBuffer->getBuffer(), 1, &copyRegion);
         vkEndCommandBuffer(commandBuffer);
@@ -198,6 +206,9 @@ private:
                         m_objectBufferDescriptors.data());
             m_objectBufferDescriptors.clear();
         }
+
+        m_objectStagingBuffers.clear();
+        m_objectBuffers.clear();
     }
 };
 
