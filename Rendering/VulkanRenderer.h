@@ -53,7 +53,7 @@ public:
         auto buffer = std::make_shared<ObjectBuffer<T>>(m_vulkanResources, m_imageCount, initialSize);
         std::weak_ptr<ObjectBuffer<T>> weakBuffer = buffer;
 
-        m_objectBuffers[name] = std::shared_ptr<IGenericBuffer>(std::move(buffer));
+        m_objectBuffers[name] = buffer;
         return weakBuffer;
     }
 
