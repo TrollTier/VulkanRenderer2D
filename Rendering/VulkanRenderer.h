@@ -48,12 +48,13 @@ public:
     }
 
     template<typename T>
-    ObjectBuffer<T>* registerDataType(const std::string& name, size_t initialSize)
+    std::weak_ptr<ObjectBuffer<T>> registerDataType(const std::string& name, size_t initialSize)
     {
-        auto buffer = std::make_unique<ObjectBuffer<T>>(m_vulkanResources, m_imageCount, initialSize);
-        auto* rawPtr = buffer.get();
-        m_objectBuffers[name] = std::unique_ptr<IGenericBuffer>(std::move(buffer));
-        return rawPtr;
+        auto buffer = std::make_shared<ObjectBuffer<T>>(m_vulkanResources, m_imageCount, initialSize);
+        std::weak_ptr<ObjectBuffer<T>> weakBuffer = buffer;
+
+        m_objectBuffers[name] = std::shared_ptr<IGenericBuffer>(std::move(buffer));
+        return weakBuffer;
     }
 
 private:
@@ -71,7 +72,7 @@ private:
     std::vector<std::unique_ptr<Buffer>> m_indexBuffers{1};
     std::vector<std::unique_ptr<Buffer>> m_cameraBuffers{};
 
-    std::unordered_map<std::string, std::unique_ptr<IGenericBuffer>> m_objectBuffers{};
+    std::unordered_map<std::string, std::shared_ptr<IGenericBuffer>> m_objectBuffers{};
 
     VkSampler m_sampler = VK_NULL_HANDLE;
     size_t m_currentDrawIndex = 0;

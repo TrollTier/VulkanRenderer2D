@@ -186,9 +186,15 @@ Game::Game()
 
 			case MouseButton::Middle:
 			{
+				const auto circleBuffer = m_circles.lock();
+				if (!circleBuffer)
+				{
+					return;
+				}
+
 				const auto x = static_cast<float>(data.x) / m_vulkanWindow->getWindowExtent().width;
 				const auto y = static_cast<float>(data.y) / m_vulkanWindow->getWindowExtent().height;
-				m_circles->append(
+				circleBuffer->append(
 					Circle(
 						glm::vec4(255, 0, 0, 1),
 						glm::vec4(x, y, 0, 0),

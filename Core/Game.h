@@ -57,8 +57,8 @@ private:
     std::unique_ptr<Input> m_inputSystem;
     std::unique_ptr<WindowContext> m_windowContext;
 
-    ObjectBuffer<SpriteRenderData>* m_spriteBuffer;
-    ObjectBuffer<Circle>* m_circles;
+    std::weak_ptr<ObjectBuffer<SpriteRenderData>> m_spriteBuffer;
+    std::weak_ptr<ObjectBuffer<Circle>> m_circles;
 
     int32_t m_selectedGameObjectIndex = -1;
 
@@ -75,13 +75,19 @@ private:
         const Sprite& sprite,
         const glm::vec3& cameraOffset)
     {
+        const auto spriteBuffer = m_spriteBuffer.lock();
+        if (!spriteBuffer)
+        {
+            return;
+        }
+
         const glm::vec3 screenPosition = glm::vec3(
              (static_cast<float>(worldPosition.x) - cameraOffset.x) * static_cast<float>(m_renderer->getPixelsPerUnit()),
              (static_cast<float>(worldPosition.y) - cameraOffset.y) * static_cast<float>(m_renderer->getPixelsPerUnit()),
              worldPosition.z);
 
         const auto& texture = m_renderer->getTexture(sprite.textureIndex);
-        auto& spriteObject = m_spriteBuffer->m_data[objectIndex];
+        auto& spriteObject = spriteBuffer->m_data[objectIndex];
 
         spriteObject.modelMatrix =
             glm::translate(glm::mat4(1.0f), screenPosition) *
@@ -89,7 +95,7 @@ private:
         spriteObject.spriteFrame = texture.getFrame(sprite.currentFrame);
         spriteObject.textureIndex = sprite.textureIndex;
 
-        m_spriteBuffer->m_dataSize = std::max(objectIndex + 1, m_spriteBuffer->m_dataSize);
+        spriteBuffer->m_dataSize = std::max(objectIndex + 1, spriteBuffer->m_dataSize);
     }
 };
 
