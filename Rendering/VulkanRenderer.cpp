@@ -16,7 +16,6 @@
 #include "VulkanWindow.h"
 #include "GLFW/glfw3native.h"
 
-#include "SpriteRenderData.h"
 #include "../Core/Camera.h"
 
 #include "../include/imgui/imgui.h"
@@ -59,6 +58,7 @@ VulkanRenderer::~VulkanRenderer()
 void VulkanRenderer::initialize()
 {
     const auto swapchain = m_vulkanResources->getSwapchain().lock();
+    m_imageCount = swapchain->getImageCount();
 
     const Shader spriteShader(
         m_vulkanResources->m_logicalDevice,
@@ -98,16 +98,6 @@ void VulkanRenderer::initialize()
                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
     }
-
-    m_spriteBuffer = std::make_unique<ObjectBuffer<SpriteRenderData>>(
-        m_vulkanResources,
-        imageCount,
-        10000);
-
-    m_circleBuffer = std::make_unique<ObjectBuffer<Circle>>(
-        m_vulkanResources,
-        imageCount,
-        100);
 }
 
 void VulkanRenderer::initializeDefaultMeshes()
@@ -132,7 +122,7 @@ size_t VulkanRenderer::loadTexture(const AtlasEntry& spriteInfo)
     m_textures.emplace_back(std::make_unique<Texture2D>(m_vulkanResources, m_assetsBasePath, spriteInfo));
 
     const auto swapchain = m_vulkanResources->getSwapchain().lock();
-    const size_t imageCount =  swapchain->getImageCount();
+    const size_t imageCount = swapchain->getImageCount();
 
     for (size_t i = 0; i < imageCount; i++)
     {
@@ -278,36 +268,6 @@ void VulkanRenderer::initializeSampler()
     }
 }
 
-void VulkanRenderer::drawSprite(
-    size_t objectIndex,
-    const glm::vec3& worldPosition,
-    const glm::vec3& scale,
-    const Sprite& sprite,
-    const glm::vec3& cameraOffset)
-{
-    const glm::vec3 screenPosition = glm::vec3(
-         (static_cast<float>(worldPosition.x) - cameraOffset.x) * static_cast<float>(m_pixelsPerUnit),
-         (static_cast<float>(worldPosition.y) - cameraOffset.y) * static_cast<float>(m_pixelsPerUnit),
-         worldPosition.z);
-
-    const auto& texture = *m_textures[sprite.textureIndex];
-    auto& spriteObject = m_spriteBuffer->m_data[objectIndex];
-
-    spriteObject.modelMatrix =
-        glm::translate(glm::mat4(1.0f), screenPosition) *
-        glm::scale(glm::mat4(1), scale);
-    spriteObject.spriteFrame = texture.getFrame(sprite.currentFrame);
-    spriteObject.textureIndex = sprite.textureIndex;
-
-    m_spriteBuffer->m_dataSize = std::max(objectIndex + 1, m_spriteBuffer->m_dataSize);
-}
-
-void VulkanRenderer::drawCircle(Circle circle)
-{
-    m_circleBuffer->append(circle);
-}
-
-
 void VulkanRenderer::updateCamera(const Camera& camera, size_t imageIndex)
 {
     const auto constants = CameraUniformData
@@ -322,11 +282,11 @@ void VulkanRenderer::updateObjectBuffers(
     VkCommandBuffer commandBuffer,
     size_t imageIndex)
 {
-    m_spriteBuffer->updateGpuBuffer(commandBuffer, m_vulkanResources->m_graphicsQueue, imageIndex);
-    vkQueueWaitIdle(m_vulkanResources->m_graphicsQueue);
-
-    m_circleBuffer->updateGpuBuffer(commandBuffer, m_vulkanResources->m_graphicsQueue, imageIndex);
-    vkQueueWaitIdle(m_vulkanResources->m_graphicsQueue);
+    for (const auto& data : m_objectBuffers)
+    {
+        data.second->updateGpuBuffer(commandBuffer, m_vulkanResources->m_graphicsQueue, imageIndex);
+        vkQueueWaitIdle(m_vulkanResources->m_graphicsQueue);
+    }
 }
 
 void VulkanRenderer::drawScene(
@@ -433,14 +393,14 @@ void VulkanRenderer::drawScene(
 
     const auto currentFrameIndex = swapchain->getCurrentFrameIndex();
 
-    DrawIndexed(
-        *m_spriteBuffer,
+    drawIndexed(
+        *m_objectBuffers["spriteData"],
         m_pipelines[0]->getPipeline(),
         currentImageElement,
         currentFrameIndex);
 
-    DrawIndexed(
-        *m_circleBuffer,
+    drawIndexed(
+        *m_objectBuffers["circles"],
         m_pipelines[1]->getPipeline(),
         currentImageElement,
         currentFrameIndex);
@@ -496,7 +456,6 @@ void VulkanRenderer::drawScene(
     }
 
     swapchain->moveToNextFrame();
-    m_spriteBuffer->m_data.clear();
 }
 
 void VulkanRenderer::imageToAttachmentLayout(SwapchainElement *element)

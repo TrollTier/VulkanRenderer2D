@@ -24,6 +24,7 @@ add_library(Rendering STATIC
         Circle.h
         ObjectBuffer.h
         SpriteRenderData.h
+        IGenericBuffer.h
 )
 
 target_link_libraries(Rendering PRIVATE Vulkan::Vulkan glfw ImGui)

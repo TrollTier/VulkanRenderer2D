@@ -7,9 +7,10 @@
 
 #include <vector>
 #include "Buffer.h"
+#include "IGenericBuffer.h"
 
 template <typename T>
-class ObjectBuffer {
+class ObjectBuffer : public IGenericBuffer {
 
 public:
     std::vector<std::unique_ptr<Buffer>> m_objectStagingBuffers{};
@@ -33,7 +34,7 @@ public:
         InitializeVulkanResources(bufferSize);
     }
 
-    ~ObjectBuffer()
+    ~ObjectBuffer() override
     {
         ClearVulkanResources();
         m_data.clear();
@@ -42,7 +43,7 @@ public:
     void updateGpuBuffer(
         VkCommandBuffer commandBuffer,
         VkQueue queue,
-        size_t imageIndex) const
+        size_t imageIndex) const override
     {
         VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -84,6 +85,26 @@ public:
         }
 
         m_data[m_dataSize++] = data;
+    }
+
+    [[nodiscard]] size_t getCount() const override
+    {
+        return m_dataSize;
+    }
+
+    [[nodiscard]] void* getData() override
+    {
+        return m_data.data();
+    }
+
+    [[nodiscard]] size_t getStride() const override
+    {
+        return sizeof(T);
+    }
+
+    [[nodiscard]] VkDescriptorSet getDescriptorSet(size_t imageIndex) const override
+    {
+        return m_objectBufferDescriptors[imageIndex];
     }
 
 private:

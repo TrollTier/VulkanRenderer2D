@@ -44,6 +44,9 @@ Game::Game()
         PIXELS_PER_UNIT);
     m_renderer->initialize();
 
+	m_spriteBuffer = m_renderer->registerDataType<SpriteRenderData>("spriteData", 10000);
+	m_circles = m_renderer->registerDataType<Circle>("circles", 100);
+
     m_atlasEntries = TextureAtlasParser::parseAtlas(assetsBasePath / "Textures/textures.atlas");
 
     for (const auto& atlas: m_atlasEntries)
@@ -185,7 +188,11 @@ Game::Game()
 			{
 				const auto x = static_cast<float>(data.x) / m_vulkanWindow->getWindowExtent().width;
 				const auto y = static_cast<float>(data.y) / m_vulkanWindow->getWindowExtent().height;
-				m_renderer->drawCircle(Circle(glm::vec4(255, 0, 0, 1), glm::vec4(x, y, 0, 0), 0.05));
+				m_circles->append(
+					Circle(
+						glm::vec4(255, 0, 0, 1),
+						glm::vec4(x, y, 0, 0),
+						0.05));
 				break;
 			}
 
@@ -271,7 +278,7 @@ void Game::drawMap()
 
 		for (const auto& layer : tile.tileLayers)
 		{
-			m_renderer->drawSprite(objectIndex, worldPos, scale, layer.sprite, offset);
+			drawSprite(objectIndex, worldPos, scale, layer.sprite, offset);
 			objectIndex++;
 		}
 	}
@@ -299,12 +306,12 @@ void Game::drawMap()
 				.currentFrame = animationData->keyFrames[animator.m_currentKeyFrame].frame
 			};
 
-			m_renderer->drawSprite(objectIndex, worldPosition, scale, sprite, offset);
+			drawSprite(objectIndex, worldPosition, scale, sprite, offset);
 			objectIndex++;
 		}
 		else
 		{
-			m_renderer->drawSprite(objectIndex, worldPosition, scale, gameObject.getSprite(), offset);
+			drawSprite(objectIndex, worldPosition, scale, gameObject.getSprite(), offset);
 			objectIndex++;
 		}
 	}

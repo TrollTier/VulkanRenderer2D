@@ -21,6 +21,8 @@
 #include "WindowContext.h"
 #include "World.h"
 #include "../Rendering/VulkanRenderer.h"
+#include "../Rendering/SpriteRenderData.h"
+#include <glm/gtc/matrix_transform.hpp>
 
 class Camera;
 class Map;
@@ -55,6 +57,9 @@ private:
     std::unique_ptr<Input> m_inputSystem;
     std::unique_ptr<WindowContext> m_windowContext;
 
+    ObjectBuffer<SpriteRenderData>* m_spriteBuffer;
+    ObjectBuffer<Circle>* m_circles;
+
     int32_t m_selectedGameObjectIndex = -1;
 
     void drawMap();
@@ -62,6 +67,30 @@ private:
 
     [[nodiscard]] glm::vec2 screenToWorld(const glm::vec2& screenPos) const;
     [[nodiscard]] glm::vec3 mouseToWorld() const;
+
+    void drawSprite(
+        size_t objectIndex,
+        const glm::vec3& worldPosition,
+        const glm::vec3& scale,
+        const Sprite& sprite,
+        const glm::vec3& cameraOffset)
+    {
+        const glm::vec3 screenPosition = glm::vec3(
+             (static_cast<float>(worldPosition.x) - cameraOffset.x) * static_cast<float>(m_renderer->getPixelsPerUnit()),
+             (static_cast<float>(worldPosition.y) - cameraOffset.y) * static_cast<float>(m_renderer->getPixelsPerUnit()),
+             worldPosition.z);
+
+        const auto& texture = m_renderer->getTexture(sprite.textureIndex);
+        auto& spriteObject = m_spriteBuffer->m_data[objectIndex];
+
+        spriteObject.modelMatrix =
+            glm::translate(glm::mat4(1.0f), screenPosition) *
+            glm::scale(glm::mat4(1), scale);
+        spriteObject.spriteFrame = texture.getFrame(sprite.currentFrame);
+        spriteObject.textureIndex = sprite.textureIndex;
+
+        m_spriteBuffer->m_dataSize = std::max(objectIndex + 1, m_spriteBuffer->m_dataSize);
+    }
 };
 
 
