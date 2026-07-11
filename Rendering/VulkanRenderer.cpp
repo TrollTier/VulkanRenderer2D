@@ -82,6 +82,17 @@ void VulkanRenderer::initialize()
             circleShader,
             swapchain->m_format.format));
 
+    const Shader rectShader(
+        m_vulkanResources->m_logicalDevice,
+        "../Assets/Shaders/Rectangles/rectangle_vert.spv",
+        "../Assets/Shaders/Rectangles/rectangle_frag.spv");
+
+    m_pipelines.emplace_back(
+        std::make_unique<Pipeline>(
+            m_vulkanResources,
+            rectShader,
+            swapchain->m_format.format));
+
     initializeSampler();
     initializeDefaultMeshes();
 
@@ -479,8 +490,8 @@ void VulkanRenderer::drawScene(
 
     // Big loop over all objects to make sure everything gets drawn.
     while (
-        batchStartIndex < m_drawRequests.size() - 1 &&
-        batchEndIndex < m_drawRequests.size() - 1)
+        batchStartIndex < m_drawRequests.size() &&
+        batchEndIndex < m_drawRequests.size())
     {
         const auto& currentBatchStartElement = m_drawRequests[batchStartIndex];
 

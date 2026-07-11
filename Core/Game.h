@@ -61,7 +61,9 @@ private:
 
     size_t m_spriteBuffer = 0;
     size_t m_circles = 0;
+    size_t m_rectangles = 0;
     std::vector<DrawRequest> m_drawRequests{10000};
+    bool m_circleIsNext = true;
 
     int32_t m_selectedGameObjectIndex = -1;
 

@@ -8,6 +8,7 @@
 
 #include "Input.h"
 #include "MapSerializer.h"
+#include "UiRectangle.h"
 #include "../Rendering/VulkanRenderer.h"
 
 Game::Game()
@@ -46,6 +47,7 @@ Game::Game()
 
 	m_spriteBuffer = m_renderer->registerDataType<SpriteRenderData>(10000);
 	m_circles = m_renderer->registerDataType<Circle>(100);
+	m_rectangles = m_renderer->registerDataType<UiRectangle>(100);
 
     m_atlasEntries = TextureAtlasParser::parseAtlas(assetsBasePath / "Textures/textures.atlas");
 
@@ -188,11 +190,25 @@ Game::Game()
 			{
 				const auto x = static_cast<float>(data.x) / m_vulkanWindow->getWindowExtent().width;
 				const auto y = static_cast<float>(data.y) / m_vulkanWindow->getWindowExtent().height;
-				m_renderer->getDataBuffer<Circle>(m_circles).append(
-					Circle(
-						glm::vec4(255, 0, 0, 1),
+
+				if (m_circleIsNext)
+				{
+					m_renderer->getDataBuffer<Circle>(m_circles).append(
+						Circle(
+							glm::vec4(255, 0, 0, 1),
+							glm::vec4(x, y, 0, 0),
+							0.05));
+				}
+				else
+				{
+					m_renderer->getDataBuffer<UiRectangle>(m_rectangles).append(
+						UiRectangle(
+						glm::vec4(0, 0, 255, 1),
 						glm::vec4(x, y, 0, 0),
-						0.05));
+						0.025f,
+						0.025f));
+				}
+				m_circleIsNext = !m_circleIsNext;
 				break;
 			}
 
@@ -326,6 +342,17 @@ void Game::draw()
 		m_drawRequests.emplace_back(
 			m_circles,
 			1,
+			i,
+			CIRCLE_LAYER,
+			i);
+	}
+
+	const auto& rectBuffer = m_renderer->getDataBuffer<UiRectangle>(m_rectangles);
+	for (size_t i = 0; i < rectBuffer.m_dataSize; i++)
+	{
+		m_drawRequests.emplace_back(
+			m_rectangles,
+			2,
 			i,
 			CIRCLE_LAYER,
 			i);

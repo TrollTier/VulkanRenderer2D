@@ -23,6 +23,11 @@ void Input::glfwMouseButtonHandler(GLFWwindow *window, int button, int action, i
 
 void Input::mouseButtonCallback(int button, int action, int mods)
 {
+    if (action != GLFW_RELEASE)
+    {
+        return;
+    }
+
     const auto enumButton = getMouseButton(button);
 
     double xpos, ypos;
