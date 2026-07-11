@@ -19,6 +19,7 @@ VulkanResources::~VulkanResources()
     vkDestroyPipelineLayout(m_logicalDevice, m_pipelineLayout, m_allocator);
     vkDestroyDescriptorSetLayout(m_logicalDevice, m_descriptorSetLayout, m_allocator);
     vkDestroyDescriptorSetLayout(m_logicalDevice, m_descriptorSetLayoutObjectsBuffer, m_allocator);
+    vkDestroyDescriptorSetLayout(m_logicalDevice, m_descriptorSetLayoutFrameGlobals, m_allocator);
     vkDestroyDescriptorPool(m_logicalDevice, m_descriptorPool, m_allocator);
     vkDestroyCommandPool(m_logicalDevice, m_commandPool, m_allocator);
     vkDestroySurfaceKHR(m_instance, m_surface, m_allocator);
@@ -67,6 +68,7 @@ void VulkanResources::initialize(
     initializeDescriptorPool();
     initializeDescriptorSetLayout();
     initializeObjectsBufferLayout();
+    initializeFrameDataLayout();
     initializePipelineLayout();
 }
 
@@ -368,11 +370,37 @@ void VulkanResources::initializeObjectsBufferLayout()
     }
 }
 
+void VulkanResources::initializeFrameDataLayout()
+{
+    VkDescriptorSetLayoutBinding objectsBufferBinding{};
+    objectsBufferBinding.binding = 0;
+    objectsBufferBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    objectsBufferBinding.descriptorCount = 1;
+    objectsBufferBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+    VkDescriptorSetLayoutCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    createInfo.bindingCount = 1;
+    createInfo.pBindings = &objectsBufferBinding;
+
+    const VkResult result = vkCreateDescriptorSetLayout(
+        m_logicalDevice,
+        &createInfo,
+        m_allocator,
+        &m_descriptorSetLayoutFrameGlobals);
+
+    if (result != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create descriptor set layout for frame globals");
+    }
+}
+
 void VulkanResources::initializePipelineLayout()
 {
-    std::vector<VkDescriptorSetLayout> layouts(2);
+    std::vector<VkDescriptorSetLayout> layouts(3);
     layouts[0] = m_descriptorSetLayout;
     layouts[1] = m_descriptorSetLayoutObjectsBuffer;
+    layouts[2] = m_descriptorSetLayoutFrameGlobals;
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
     pipelineLayoutInfo.setLayoutCount = layouts.size();

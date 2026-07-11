@@ -10,6 +10,7 @@
 
 #include "Buffer.h"
 #include "Circle.h"
+#include "DrawRequest.h"
 #include "ObjectBuffer.h"
 #include "Pipeline.h"
 #include "Swapchain.h"
@@ -37,30 +38,47 @@ public:
 
     void drawScene(
         const Camera& camera,
+        const std::vector<DrawRequest>& drawRequests,
         ImDrawData* uiData);
 
-    uint32_t getPixelsPerUnit() const { return m_pixelsPerUnit; }
+    [[nodiscard]] uint32_t getPixelsPerUnit() const { return m_pixelsPerUnit; }
     void setPixelsPerUnit(uint32_t pixelsPerUnit) { m_pixelsPerUnit = pixelsPerUnit; }
 
-    const Texture2D& getTexture(size_t index) const
+    [[nodiscard]] const Texture2D& getTexture(size_t index) const
     {
         return *m_textures[index];
     }
 
     template<typename T>
-    std::weak_ptr<ObjectBuffer<T>> registerDataType(const std::string& name, size_t initialSize)
+    size_t registerDataType(size_t initialSize)
     {
-        auto buffer = std::make_shared<ObjectBuffer<T>>(m_vulkanResources, m_imageCount, initialSize);
-        std::weak_ptr<ObjectBuffer<T>> weakBuffer = buffer;
+        m_objectBuffers.emplace_back(
+            std::make_unique<ObjectBuffer<T>>(
+                m_vulkanResources,
+                m_imageCount,
+                initialSize));
+        return m_objectBuffers.size() - 1;
+    }
 
-        m_objectBuffers[name] = buffer;
-        return weakBuffer;
+    template<typename T>
+    ObjectBuffer<T>& getDataBuffer(size_t index)
+    {
+        IGenericBuffer& reference = *m_objectBuffers[index];
+        return static_cast<ObjectBuffer<T>&>(reference);
+    }
+
+    template<typename T>
+    const ObjectBuffer<T>& getDataBuffer(size_t index) const
+    {
+        const IGenericBuffer& reference = *m_objectBuffers[index];
+        return static_cast<ObjectBuffer<T>&>(reference);
     }
 
 private:
     uint32_t m_pixelsPerUnit = 1;
     std::filesystem::path m_assetsBasePath;
-    std::vector<VkDescriptorSet> m_defaultDescriptorSets;
+    std::vector<VkDescriptorSet> m_sceneDataDescriptorSets;
+    std::vector<VkDescriptorSet> m_frameDataDescriptorSets;
 
     std::shared_ptr<VulkanResources> m_vulkanResources;
     std::vector<std::unique_ptr<Pipeline>> m_pipelines {};
@@ -71,8 +89,11 @@ private:
     std::vector<std::unique_ptr<Buffer>> m_vertexBuffers{1};
     std::vector<std::unique_ptr<Buffer>> m_indexBuffers{1};
     std::vector<std::unique_ptr<Buffer>> m_cameraBuffers{};
+    std::vector<std::unique_ptr<Buffer>> m_instanceIndexBuffers{};
 
-    std::unordered_map<std::string, std::shared_ptr<IGenericBuffer>> m_objectBuffers{};
+    std::vector<std::unique_ptr<IGenericBuffer>> m_objectBuffers{};
+    std::vector<DrawRequest> m_drawRequests{};
+    std::vector<uint32_t> m_instanceIndices{10000};
 
     VkSampler m_sampler = VK_NULL_HANDLE;
     size_t m_currentDrawIndex = 0;
@@ -88,19 +109,25 @@ private:
         size_t imageIndex);
 
     void drawIndexed(
-        const IGenericBuffer& objects,
-        const VkPipeline& pipeline,
         const SwapchainElement* currentImageElement,
-        size_t currentFrameIndex)
+        size_t currentFrameIndex,
+        size_t pipelineIndex,
+        size_t bufferIndex,
+        size_t firstDataInstanceIndex,
+        size_t lastDataInstanceIndex)
     {
+        VkPipeline pipeline = m_pipelines[pipelineIndex]->getPipeline();
+        const IGenericBuffer& objects = *m_objectBuffers[bufferIndex];
+
         vkCmdBindPipeline(
             currentImageElement->commandBuffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             pipeline);
 
         std::vector<VkDescriptorSet> descriptorSets{};
-        descriptorSets.push_back(m_defaultDescriptorSets[currentFrameIndex]);
+        descriptorSets.push_back(m_sceneDataDescriptorSets[currentFrameIndex]);
         descriptorSets.push_back(objects.getDescriptorSet(currentFrameIndex));
+        descriptorSets.push_back(m_frameDataDescriptorSets[currentFrameIndex]);
 
         // Bind global descriptor set
         vkCmdBindDescriptorSets(
@@ -115,20 +142,14 @@ private:
         );
 
         const Mesh& mesh = *m_meshes[0];
-        const size_t meshIndex = mesh.getMeshIndex();
-
-        VkBuffer vertexBuffers[] = { m_vertexBuffers[meshIndex]->getBuffer() };
-        VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(currentImageElement->commandBuffer, 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(currentImageElement->commandBuffer, m_indexBuffers[meshIndex]->getBuffer(), 0, VK_INDEX_TYPE_UINT16);
 
         vkCmdDrawIndexed(
             currentImageElement->commandBuffer,
             mesh.getIndices().size(),
-            objects.getCount(),
+            (lastDataInstanceIndex - firstDataInstanceIndex) + 1,
             0,
             0,
-            0);
+            firstDataInstanceIndex);
     }
 
     static void imageToAttachmentLayout(SwapchainElement* element);

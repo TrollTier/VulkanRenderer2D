@@ -25,6 +25,7 @@ add_library(Rendering STATIC
         ObjectBuffer.h
         SpriteRenderData.h
         IGenericBuffer.h
+        DrawRequest.h
 )
 
 target_link_libraries(Rendering PRIVATE Vulkan::Vulkan glfw ImGui)

@@ -21,6 +21,10 @@ layout(std430, set = 1, binding = 0) readonly buffer ObjectBuffer {
     ObjectData objects[];
 } objectBuffer;
 
+layout(std430, set = 2, binding = 0) readonly buffer InstanceIndexBuffer {
+    uint indices[];
+} instanceIndexBuffer;
+
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec2 inTexCoord;
 
@@ -29,7 +33,8 @@ layout(location = 1) out vec2 fragTexCoord;
 layout(location = 2) flat out uint textureIndex;
 
 void main() {
-    ObjectData instanceData = objectBuffer.objects[gl_InstanceIndex];
+    uint realIndex = instanceIndexBuffer.indices[gl_InstanceIndex];
+    ObjectData instanceData = objectBuffer.objects[realIndex];
 
     vec4 position = camera.viewProjection * instanceData.modelMatrix * vec4(inPosition, 1.0);
     gl_Position = position;

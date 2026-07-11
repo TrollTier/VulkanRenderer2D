@@ -240,7 +240,7 @@ void Editor::RunLoop()
 		updateUI();
 
     	ImDrawData* uiData = ImGui::GetDrawData();
-    	m_renderer->drawScene(*m_camera, uiData);
+    	m_renderer->drawScene(*m_camera, {}, uiData);
 
         const auto endOfRender = std::chrono::high_resolution_clock::now();
 

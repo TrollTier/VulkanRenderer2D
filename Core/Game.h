@@ -44,6 +44,8 @@ public:
     void RunLoop();
 
 private:
+    const size_t CIRCLE_LAYER = 9000;
+
     std::vector<AtlasEntry> m_atlasEntries;
 
     GLFWwindow* m_window;
@@ -57,12 +59,13 @@ private:
     std::unique_ptr<Input> m_inputSystem;
     std::unique_ptr<WindowContext> m_windowContext;
 
-    std::weak_ptr<ObjectBuffer<SpriteRenderData>> m_spriteBuffer;
-    std::weak_ptr<ObjectBuffer<Circle>> m_circles;
+    size_t m_spriteBuffer = 0;
+    size_t m_circles = 0;
+    std::vector<DrawRequest> m_drawRequests{10000};
 
     int32_t m_selectedGameObjectIndex = -1;
 
-    void drawMap();
+    void draw();
     void drawSelectedCharacter();
 
     [[nodiscard]] glm::vec2 screenToWorld(const glm::vec2& screenPos) const;
@@ -70,16 +73,13 @@ private:
 
     void drawSprite(
         size_t objectIndex,
+        size_t layer,
         const glm::vec3& worldPosition,
         const glm::vec3& scale,
         const Sprite& sprite,
         const glm::vec3& cameraOffset)
     {
-        const auto spriteBuffer = m_spriteBuffer.lock();
-        if (!spriteBuffer)
-        {
-            return;
-        }
+        auto& spriteBuffer = m_renderer->getDataBuffer<SpriteRenderData>(m_spriteBuffer);
 
         const glm::vec3 screenPosition = glm::vec3(
              (static_cast<float>(worldPosition.x) - cameraOffset.x) * static_cast<float>(m_renderer->getPixelsPerUnit()),
@@ -87,7 +87,7 @@ private:
              worldPosition.z);
 
         const auto& texture = m_renderer->getTexture(sprite.textureIndex);
-        auto& spriteObject = spriteBuffer->m_data[objectIndex];
+        auto& spriteObject = spriteBuffer.m_data[objectIndex];
 
         spriteObject.modelMatrix =
             glm::translate(glm::mat4(1.0f), screenPosition) *
@@ -95,7 +95,10 @@ private:
         spriteObject.spriteFrame = texture.getFrame(sprite.currentFrame);
         spriteObject.textureIndex = sprite.textureIndex;
 
-        spriteBuffer->m_dataSize = std::max(objectIndex + 1, spriteBuffer->m_dataSize);
+        spriteBuffer.m_dataSize = std::max(objectIndex + 1, spriteBuffer.m_dataSize);
+
+        // TODO: pipelines should be registered and referenced correctly here
+        m_drawRequests.emplace_back(m_spriteBuffer, 0, objectIndex, layer, worldPosition.y);
     }
 };
 

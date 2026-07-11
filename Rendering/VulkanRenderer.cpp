@@ -48,9 +48,9 @@ VulkanRenderer::~VulkanRenderer()
     vkFreeDescriptorSets(
         device,
         descriptorPool,
-        m_defaultDescriptorSets.size(),
-        m_defaultDescriptorSets.data());
-    m_defaultDescriptorSets.clear();
+        m_sceneDataDescriptorSets.size(),
+        m_sceneDataDescriptorSets.data());
+    m_sceneDataDescriptorSets.clear();
 
     vkDestroySampler(device, m_sampler, allocator);
 }
@@ -87,7 +87,25 @@ void VulkanRenderer::initialize()
 
     const auto imageCount = swapchain->getImageCount();
     m_cameraBuffers.reserve(imageCount);
-    m_defaultDescriptorSets.resize(imageCount);
+    m_sceneDataDescriptorSets.resize(imageCount);
+    m_frameDataDescriptorSets.resize(imageCount);
+
+    std::vector<VkDescriptorSetLayout> layouts(imageCount, m_vulkanResources->m_descriptorSetLayoutFrameGlobals);
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = m_vulkanResources->m_descriptorPool;
+    allocInfo.descriptorSetCount = imageCount;
+    allocInfo.pSetLayouts = layouts.data();
+
+    const auto result = vkAllocateDescriptorSets(
+        m_vulkanResources->m_logicalDevice,
+        &allocInfo,
+        m_frameDataDescriptorSets.data());
+
+    if (result != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to allocate descriptor sets!");
+    }
 
     for (int i = 0; i < imageCount; i++)
     {
@@ -97,6 +115,35 @@ void VulkanRenderer::initialize()
                 sizeof(CameraUniformData),
                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+
+        m_instanceIndexBuffers.emplace_back(
+            std::make_unique<Buffer>(
+                m_vulkanResources,
+                sizeof(uint32_t) * 10000, // TODO: Make this more dynamic and potentially resizable
+                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+
+        const auto set = m_frameDataDescriptorSets[i];
+        VkDescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = m_instanceIndexBuffers[i]->getBuffer();
+        bufferInfo.offset = 0;
+        bufferInfo.range = m_instanceIndexBuffers[i]->getSize();
+
+        std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
+        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[0].dstSet = set;
+        descriptorWrites[0].dstBinding = 0;
+        descriptorWrites[0].dstArrayElement = 0;
+        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        descriptorWrites[0].descriptorCount = 1;
+        descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+        vkUpdateDescriptorSets(
+            m_vulkanResources->m_logicalDevice,
+            static_cast<uint32_t>(descriptorWrites.size()),
+            descriptorWrites.data(),
+            0,
+            nullptr);
     }
 }
 
@@ -126,18 +173,18 @@ size_t VulkanRenderer::loadTexture(const AtlasEntry& spriteInfo)
 
     for (size_t i = 0; i < imageCount; i++)
     {
-        if (m_defaultDescriptorSets[i] != VK_NULL_HANDLE)
+        if (m_sceneDataDescriptorSets[i] != VK_NULL_HANDLE)
         {
             vkFreeDescriptorSets(
                 m_vulkanResources->m_logicalDevice,
                 m_vulkanResources->m_descriptorPool,
                 1,
-                &m_defaultDescriptorSets[i]);
+                &m_sceneDataDescriptorSets[i]);
         }
     }
 
-    m_defaultDescriptorSets.clear();
-    m_defaultDescriptorSets.resize(imageCount);
+    m_sceneDataDescriptorSets.clear();
+    m_sceneDataDescriptorSets.resize(imageCount);
     std::vector<VkDescriptorSetLayout> layouts(imageCount, m_vulkanResources->m_descriptorSetLayout);
 
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -149,7 +196,7 @@ size_t VulkanRenderer::loadTexture(const AtlasEntry& spriteInfo)
     const auto result = vkAllocateDescriptorSets(
             m_vulkanResources->m_logicalDevice,
             &allocInfo,
-            m_defaultDescriptorSets.data());
+            m_sceneDataDescriptorSets.data());
 
     if (result != VK_SUCCESS)
     {
@@ -170,7 +217,7 @@ size_t VulkanRenderer::loadTexture(const AtlasEntry& spriteInfo)
 
     for (size_t i = 0; i < imageCount; i++)
     {
-        const auto set = m_defaultDescriptorSets[i];
+        const auto set = m_sceneDataDescriptorSets[i];
 
         VkDescriptorBufferInfo bufferInfo{};
         bufferInfo.buffer = m_cameraBuffers[i]->getBuffer();
@@ -282,17 +329,43 @@ void VulkanRenderer::updateObjectBuffers(
     VkCommandBuffer commandBuffer,
     size_t imageIndex)
 {
+    m_instanceIndices.clear();
+
+    for (auto& drawRequest : m_drawRequests)
+    {
+        m_instanceIndices.push_back(drawRequest.instanceIndex);
+    }
+
+    m_instanceIndexBuffers[imageIndex]->writeData(m_instanceIndices.data(), sizeof(uint32_t) * m_drawRequests.size());
+
     for (const auto& data : m_objectBuffers)
     {
-        data.second->updateGpuBuffer(commandBuffer, m_vulkanResources->m_graphicsQueue, imageIndex);
+        data->updateGpuBuffer(commandBuffer, m_vulkanResources->m_graphicsQueue, imageIndex);
         vkQueueWaitIdle(m_vulkanResources->m_graphicsQueue);
     }
 }
 
 void VulkanRenderer::drawScene(
     const Camera& camera,
+    const std::vector<DrawRequest>& drawRequests,
     ImDrawData* uiData)
 {
+    m_drawRequests = drawRequests; // Copy
+
+    std::ranges::stable_sort(m_drawRequests, [](const auto& a, const auto& b) {
+        if (a.layer != b.layer)
+        {
+            return a.layer < b.layer;
+        }
+
+        if (a.orderInLayer != b.orderInLayer)
+        {
+            return a.orderInLayer < b.orderInLayer;
+        }
+
+        return false;
+    });
+
     auto swapchain = m_vulkanResources->getSwapchain().lock();
     const auto currentFrameElement = swapchain->getCurrentFrame();
 
@@ -393,17 +466,45 @@ void VulkanRenderer::drawScene(
 
     const auto currentFrameIndex = swapchain->getCurrentFrameIndex();
 
-    drawIndexed(
-        *m_objectBuffers["spriteData"],
-        m_pipelines[0]->getPipeline(),
-        currentImageElement,
-        currentFrameIndex);
+    const Mesh& mesh = *m_meshes[0];
+    const size_t meshIndex = mesh.getMeshIndex();
 
-    drawIndexed(
-        *m_objectBuffers["circles"],
-        m_pipelines[1]->getPipeline(),
-        currentImageElement,
-        currentFrameIndex);
+    VkBuffer vertexBuffers[] = { m_vertexBuffers[meshIndex]->getBuffer() };
+    VkDeviceSize offsets[] = { 0 };
+    vkCmdBindVertexBuffers(currentImageElement->commandBuffer, 0, 1, vertexBuffers, offsets);
+    vkCmdBindIndexBuffer(currentImageElement->commandBuffer, m_indexBuffers[meshIndex]->getBuffer(), 0, VK_INDEX_TYPE_UINT16);
+
+    size_t batchStartIndex = 0;
+    size_t batchEndIndex = 0;
+
+    // Big loop over all objects to make sure everything gets drawn.
+    while (
+        batchStartIndex < m_drawRequests.size() - 1 &&
+        batchEndIndex < m_drawRequests.size() - 1)
+    {
+        const auto& currentBatchStartElement = m_drawRequests[batchStartIndex];
+
+        // Small loop to find the elements for the next draw batch
+        while (
+            batchEndIndex < m_drawRequests.size() - 1 &&
+            m_drawRequests[batchEndIndex + 1].layer == currentBatchStartElement.layer &&
+            m_drawRequests[batchEndIndex + 1].objectBufferIndex == currentBatchStartElement.objectBufferIndex &&
+            m_drawRequests[batchEndIndex + 1].pipelineIndex == currentBatchStartElement.pipelineIndex)
+        {
+            batchEndIndex += 1;
+        }
+
+        drawIndexed(
+            currentImageElement,
+            currentFrameIndex,
+            currentBatchStartElement.pipelineIndex,
+            currentBatchStartElement.objectBufferIndex,
+            batchStartIndex,
+            batchEndIndex);
+
+        batchStartIndex = batchEndIndex + 1;
+        batchEndIndex = batchEndIndex + 1;
+    }
 
     if (uiData)
     {

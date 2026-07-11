@@ -24,6 +24,7 @@ public:
     VkDescriptorPool m_descriptorPool = VK_NULL_HANDLE;
     VkDescriptorSetLayout m_descriptorSetLayout = VK_NULL_HANDLE;
     VkDescriptorSetLayout m_descriptorSetLayoutObjectsBuffer = VK_NULL_HANDLE;
+    VkDescriptorSetLayout m_descriptorSetLayoutFrameGlobals = VK_NULL_HANDLE;
     VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
 
     uint32_t m_graphicsQueueFamilyIndex = 0;
@@ -70,6 +71,7 @@ private:
     void initializeDescriptorPool();
     void initializeDescriptorSetLayout();
     void initializeObjectsBufferLayout();
+    void initializeFrameDataLayout();
     void initializePipelineLayout();
 };
 

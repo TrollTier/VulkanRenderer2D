@@ -44,8 +44,8 @@ Game::Game()
         PIXELS_PER_UNIT);
     m_renderer->initialize();
 
-	m_spriteBuffer = m_renderer->registerDataType<SpriteRenderData>("spriteData", 10000);
-	m_circles = m_renderer->registerDataType<Circle>("circles", 100);
+	m_spriteBuffer = m_renderer->registerDataType<SpriteRenderData>(10000);
+	m_circles = m_renderer->registerDataType<Circle>(100);
 
     m_atlasEntries = TextureAtlasParser::parseAtlas(assetsBasePath / "Textures/textures.atlas");
 
@@ -186,15 +186,9 @@ Game::Game()
 
 			case MouseButton::Middle:
 			{
-				const auto circleBuffer = m_circles.lock();
-				if (!circleBuffer)
-				{
-					return;
-				}
-
 				const auto x = static_cast<float>(data.x) / m_vulkanWindow->getWindowExtent().width;
 				const auto y = static_cast<float>(data.y) / m_vulkanWindow->getWindowExtent().height;
-				circleBuffer->append(
+				m_renderer->getDataBuffer<Circle>(m_circles).append(
 					Circle(
 						glm::vec4(255, 0, 0, 1),
 						glm::vec4(x, y, 0, 0),
@@ -245,9 +239,7 @@ void Game::RunLoop()
 
 		const auto startOfRender = std::chrono::high_resolution_clock::now();
 
-		drawMap();
-
-		m_renderer->drawScene(*m_camera, nullptr);
+		draw();
 
 		const auto endOfRender = std::chrono::high_resolution_clock::now();
 
@@ -260,8 +252,10 @@ void Game::RunLoop()
 	}
 }
 
-void Game::drawMap()
+void Game::draw()
 {
+	m_drawRequests.clear();
+
 	const auto& frustum = m_camera->getFrustum();
 	const auto offset = glm::vec3(frustum.x, frustum.y, 0);
 
@@ -271,6 +265,7 @@ void Game::drawMap()
 	const glm::vec3 scale{PIXELS_PER_UNIT, PIXELS_PER_UNIT, 1 };
 
 	size_t objectIndex = 0;
+	uint8_t maxMapLayer = 0;
 
 	for (const auto& tile : tiles)
 	{
@@ -284,10 +279,13 @@ void Game::drawMap()
 
 		for (const auto& layer : tile.tileLayers)
 		{
-			drawSprite(objectIndex, worldPos, scale, layer.sprite, offset);
+			drawSprite(objectIndex, layer.layer, worldPos, scale, layer.sprite, offset);
 			objectIndex++;
+			maxMapLayer = glm::max(maxMapLayer, layer.layer);
 		}
 	}
+
+	const size_t gameObjectsLayer = maxMapLayer + 1;
 
 	for (const auto& gameObject : gameObjects)
 	{
@@ -312,15 +310,28 @@ void Game::drawMap()
 				.currentFrame = animationData->keyFrames[animator.m_currentKeyFrame].frame
 			};
 
-			drawSprite(objectIndex, worldPosition, scale, sprite, offset);
+			drawSprite(objectIndex,gameObjectsLayer, worldPosition, scale, sprite, offset);
 			objectIndex++;
 		}
 		else
 		{
-			drawSprite(objectIndex, worldPosition, scale, gameObject.getSprite(), offset);
+			drawSprite(objectIndex,gameObjectsLayer, worldPosition, scale, gameObject.getSprite(), offset);
 			objectIndex++;
 		}
 	}
+
+	const auto& circleBuffer = m_renderer->getDataBuffer<Circle>(m_circles);
+	for (size_t i = 0; i < circleBuffer.m_dataSize; i++)
+	{
+		m_drawRequests.emplace_back(
+			m_circles,
+			1,
+			i,
+			CIRCLE_LAYER,
+			i);
+	}
+
+	m_renderer->drawScene(*m_camera, m_drawRequests, nullptr);
 }
 
 void Game::drawSelectedCharacter()

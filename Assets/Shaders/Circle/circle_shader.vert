@@ -13,6 +13,10 @@ layout(std430, set = 1, binding = 0) readonly buffer CircleBuffer {
     Circle circles[];
 } circleBuffer;
 
+layout(std430, set = 2, binding = 0) readonly buffer InstanceIndexBuffer {
+    uint indices[];
+} instanceIndexBuffer;
+
 layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec2 localCoordinates;
 layout(location = 2) out float radius;
@@ -22,7 +26,8 @@ float remapToNDC(float x) {
 }
 
 void main() {
-    Circle circle = circleBuffer.circles[gl_InstanceIndex];
+    uint realIndex = instanceIndexBuffer.indices[gl_InstanceIndex];
+    Circle circle = circleBuffer.circles[realIndex];
 
     vec2 localPosition = (inPosition.xy * 2.0 - 1.0) * circle.radius;
     vec2 worldPosition = circle.position.xy + localPosition;
