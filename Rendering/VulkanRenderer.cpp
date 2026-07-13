@@ -60,39 +60,6 @@ void VulkanRenderer::initialize()
     const auto swapchain = m_vulkanResources->getSwapchain().lock();
     m_imageCount = swapchain->getImageCount();
 
-    const Shader spriteShader(
-        m_vulkanResources->m_logicalDevice,
-        "../Assets/Shaders/vert.spv",
-        "../Assets/Shaders/frag.spv");
-
-    m_pipelines.emplace_back(
-        std::make_unique<Pipeline>(
-            m_vulkanResources,
-            spriteShader,
-            swapchain->m_format.format));
-
-    const Shader circleShader(
-        m_vulkanResources->m_logicalDevice,
-        "../Assets/Shaders/Circle/circle_vert.spv",
-        "../Assets/Shaders/Circle/circle_frag.spv");
-
-    m_pipelines.emplace_back(
-        std::make_unique<Pipeline>(
-            m_vulkanResources,
-            circleShader,
-            swapchain->m_format.format));
-
-    const Shader rectShader(
-        m_vulkanResources->m_logicalDevice,
-        "../Assets/Shaders/Rectangles/rectangle_vert.spv",
-        "../Assets/Shaders/Rectangles/rectangle_frag.spv");
-
-    m_pipelines.emplace_back(
-        std::make_unique<Pipeline>(
-            m_vulkanResources,
-            rectShader,
-            swapchain->m_format.format));
-
     initializeSampler();
     initializeDefaultMeshes();
 
@@ -499,7 +466,6 @@ void VulkanRenderer::drawScene(
         while (
             batchEndIndex < m_drawRequests.size() - 1 &&
             m_drawRequests[batchEndIndex + 1].layer == currentBatchStartElement.layer &&
-            m_drawRequests[batchEndIndex + 1].objectBufferIndex == currentBatchStartElement.objectBufferIndex &&
             m_drawRequests[batchEndIndex + 1].pipelineIndex == currentBatchStartElement.pipelineIndex)
         {
             batchEndIndex += 1;
@@ -509,7 +475,6 @@ void VulkanRenderer::drawScene(
             currentImageElement,
             currentFrameIndex,
             currentBatchStartElement.pipelineIndex,
-            currentBatchStartElement.objectBufferIndex,
             batchStartIndex,
             batchEndIndex);
 

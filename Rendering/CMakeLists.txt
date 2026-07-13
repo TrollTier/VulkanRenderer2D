@@ -20,7 +20,6 @@ add_library(Rendering STATIC
         ImageRect.h
         Shader.cpp
         Shader.h
-        Material.h
         Circle.h
         ObjectBuffer.h
         SpriteRenderData.h

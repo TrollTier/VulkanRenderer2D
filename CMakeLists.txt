@@ -40,7 +40,7 @@ add_executable(FireEmblemClone main.cpp
         Core/WindowContext.h
         Core/WindowContext.h
         Core/Input.cpp
-        Core/Rectangle.h)
+        Core/UiRectangle.h)
 
 set( GLFW_BUILD_DOCS OFF CACHE BOOL  "GLFW lib only" )
 add_subdirectory(include/glfw-3.4)

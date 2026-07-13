@@ -8,7 +8,6 @@
 
 typedef struct
 {
-    size_t objectBufferIndex = 0;
     size_t pipelineIndex = 0;
     size_t instanceIndex = 0;
     uint32_t layer = 0;

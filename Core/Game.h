@@ -59,9 +59,13 @@ private:
     std::unique_ptr<Input> m_inputSystem;
     std::unique_ptr<WindowContext> m_windowContext;
 
-    size_t m_spriteBuffer = 0;
-    size_t m_circles = 0;
-    size_t m_rectangles = 0;
+    size_t m_spriteBufferIndex = 0;
+    size_t m_spritePipelineIndex = 0;
+    size_t m_circlesBufferIndex = 0;
+    size_t m_circlesPipelineIndex = 0;
+    size_t m_rectanglesBufferIndex = 0;
+    size_t m_rectanglesPipelineIndex = 0;
+
     std::vector<DrawRequest> m_drawRequests{10000};
     bool m_circleIsNext = true;
 
@@ -81,7 +85,7 @@ private:
         const Sprite& sprite,
         const glm::vec3& cameraOffset)
     {
-        auto& spriteBuffer = m_renderer->getDataBuffer<SpriteRenderData>(m_spriteBuffer);
+        auto& spriteBuffer = m_renderer->getDataBuffer<SpriteRenderData>(m_spriteBufferIndex);
 
         const glm::vec3 screenPosition = glm::vec3(
              (static_cast<float>(worldPosition.x) - cameraOffset.x) * static_cast<float>(m_renderer->getPixelsPerUnit()),
@@ -100,7 +104,7 @@ private:
         spriteBuffer.m_dataSize = std::max(objectIndex + 1, spriteBuffer.m_dataSize);
 
         // TODO: pipelines should be registered and referenced correctly here
-        m_drawRequests.emplace_back(m_spriteBuffer, 0, objectIndex, layer, worldPosition.y);
+        m_drawRequests.emplace_back(m_spritePipelineIndex, objectIndex, layer, worldPosition.y);
     }
 };
 

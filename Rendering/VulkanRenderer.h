@@ -74,6 +74,26 @@ public:
         return static_cast<ObjectBuffer<T>&>(reference);
     }
 
+    size_t registerShader(
+        const std::filesystem::path& vertexShaderPath,
+        const std::filesystem::path& fragmentShaderPath,
+        size_t dataBufferIndex)
+    {
+        const Shader spriteShader(
+            m_vulkanResources->m_logicalDevice,
+            vertexShaderPath,
+            fragmentShaderPath);
+
+        m_pipelines.emplace_back(
+            std::make_unique<Pipeline>(
+                m_vulkanResources,
+                spriteShader,
+                m_vulkanResources->getSwapchain().lock()->m_format.format,
+                dataBufferIndex));
+
+        return m_pipelines.size() - 1;
+    }
+
 private:
     uint32_t m_pixelsPerUnit = 1;
     std::filesystem::path m_assetsBasePath;
@@ -112,17 +132,16 @@ private:
         const SwapchainElement* currentImageElement,
         size_t currentFrameIndex,
         size_t pipelineIndex,
-        size_t bufferIndex,
         size_t firstDataInstanceIndex,
         size_t lastDataInstanceIndex)
     {
-        VkPipeline pipeline = m_pipelines[pipelineIndex]->getPipeline();
-        const IGenericBuffer& objects = *m_objectBuffers[bufferIndex];
+        const auto& pipeline = *m_pipelines[pipelineIndex];
+        const IGenericBuffer& objects = *m_objectBuffers[pipeline.getDataBufferIndex()];
 
         vkCmdBindPipeline(
             currentImageElement->commandBuffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
-            pipeline);
+            pipeline.getPipeline());
 
         std::vector<VkDescriptorSet> descriptorSets{};
         descriptorSets.push_back(m_sceneDataDescriptorSets[currentFrameIndex]);

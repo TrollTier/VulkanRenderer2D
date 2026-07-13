@@ -45,9 +45,23 @@ Game::Game()
         PIXELS_PER_UNIT);
     m_renderer->initialize();
 
-	m_spriteBuffer = m_renderer->registerDataType<SpriteRenderData>(10000);
-	m_circles = m_renderer->registerDataType<Circle>(100);
-	m_rectangles = m_renderer->registerDataType<UiRectangle>(100);
+	m_spriteBufferIndex = m_renderer->registerDataType<SpriteRenderData>(10000);
+	m_spritePipelineIndex = m_renderer->registerShader(
+		assetsBasePath / "Shaders" / "vert.spv",
+		assetsBasePath / "Shaders" / "frag.spv",
+		m_spriteBufferIndex);
+
+	m_circlesBufferIndex = m_renderer->registerDataType<Circle>(100);
+	m_circlesPipelineIndex = m_renderer->registerShader(
+			assetsBasePath / "Shaders" / "Circle" / "circle_vert.spv",
+			assetsBasePath / "Shaders" / "Circle" / "circle_frag.spv",
+			m_circlesBufferIndex);
+
+	m_rectanglesBufferIndex = m_renderer->registerDataType<UiRectangle>(100);
+	m_rectanglesPipelineIndex = m_renderer->registerShader(
+			assetsBasePath / "Shaders" / "Rectangles" / "rectangle_vert.spv",
+			assetsBasePath / "Shaders" / "Rectangles" / "rectangle_frag.spv",
+			m_rectanglesBufferIndex);
 
     m_atlasEntries = TextureAtlasParser::parseAtlas(assetsBasePath / "Textures/textures.atlas");
 
@@ -193,7 +207,7 @@ Game::Game()
 
 				if (m_circleIsNext)
 				{
-					m_renderer->getDataBuffer<Circle>(m_circles).append(
+					m_renderer->getDataBuffer<Circle>(m_circlesBufferIndex).append(
 						Circle(
 							glm::vec4(255, 0, 0, 1),
 							glm::vec4(x, y, 0, 0),
@@ -201,7 +215,7 @@ Game::Game()
 				}
 				else
 				{
-					m_renderer->getDataBuffer<UiRectangle>(m_rectangles).append(
+					m_renderer->getDataBuffer<UiRectangle>(m_rectanglesBufferIndex).append(
 						UiRectangle(
 						glm::vec4(0, 0, 255, 1),
 						glm::vec4(x, y, 0, 0),
@@ -336,23 +350,21 @@ void Game::draw()
 		}
 	}
 
-	const auto& circleBuffer = m_renderer->getDataBuffer<Circle>(m_circles);
+	const auto& circleBuffer = m_renderer->getDataBuffer<Circle>(m_circlesBufferIndex);
 	for (size_t i = 0; i < circleBuffer.m_dataSize; i++)
 	{
 		m_drawRequests.emplace_back(
-			m_circles,
-			1,
+			m_circlesPipelineIndex,
 			i,
 			CIRCLE_LAYER,
 			i);
 	}
 
-	const auto& rectBuffer = m_renderer->getDataBuffer<UiRectangle>(m_rectangles);
+	const auto& rectBuffer = m_renderer->getDataBuffer<UiRectangle>(m_rectanglesBufferIndex);
 	for (size_t i = 0; i < rectBuffer.m_dataSize; i++)
 	{
 		m_drawRequests.emplace_back(
-			m_rectangles,
-			2,
+			m_rectanglesPipelineIndex,
 			i,
 			CIRCLE_LAYER,
 			i);

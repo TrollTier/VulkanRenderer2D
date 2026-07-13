@@ -15,18 +15,25 @@ class Pipeline
 public:
     ~Pipeline();
     Pipeline(
-        std::shared_ptr<VulkanResources> resources,
+        std::weak_ptr<VulkanResources> resources,
         const Shader& shader,
-        VkFormat swapchainImageFormat);
+        VkFormat swapchainImageFormat,
+        size_t dataBufferIndex);
 
     [[nodiscard]] VkPipeline getPipeline() const
     {
         return m_pipeline;
     }
 
+    [[nodiscard]] size_t getDataBufferIndex() const
+    {
+        return m_dataBufferIndex;;
+    }
+
 private:
-    std::shared_ptr<VulkanResources> m_vulkanResources;
+    std::weak_ptr<VulkanResources> m_vulkanResources;
     VkPipeline m_pipeline;
+    size_t m_dataBufferIndex;
 };
 
 #endif //PIPELINE_H

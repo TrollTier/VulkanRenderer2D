@@ -9,15 +9,31 @@
 
 Pipeline::~Pipeline()
 {
-    vkDestroyPipeline(m_vulkanResources->m_logicalDevice, m_pipeline, m_vulkanResources->m_allocator);
+    if (m_vulkanResources.expired())
+    {
+        return;
+    }
+
+    const auto& resources = m_vulkanResources.lock();
+
+    vkDestroyPipeline(resources->m_logicalDevice, m_pipeline, resources->m_allocator);
 }
 
 Pipeline::Pipeline(
-    std::shared_ptr<VulkanResources> resources,
+    std::weak_ptr<VulkanResources> resources,
     const Shader& shader,
-    VkFormat swapchainImageFormat)
+    VkFormat swapchainImageFormat,
+    size_t dataBufferIndex)
 {
     m_vulkanResources = resources;
+    m_dataBufferIndex = dataBufferIndex;
+
+    if (resources.expired())
+    {
+        return;
+    }
+
+    const auto lockedResources = resources.lock();
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
     vertShaderStageInfo.module = shader.getVertexShaderModule();
@@ -115,17 +131,17 @@ Pipeline::Pipeline(
     graphicsPipelineCreateInfo.pViewportState = &viewportState;
     graphicsPipelineCreateInfo.pColorBlendState = &colorBlending;
     graphicsPipelineCreateInfo.pDynamicState = &dynamicState;
-    graphicsPipelineCreateInfo.layout = resources->m_pipelineLayout;
+    graphicsPipelineCreateInfo.layout = lockedResources->m_pipelineLayout;
     graphicsPipelineCreateInfo.renderPass = VK_NULL_HANDLE; // because we're using dynamic rendering
     graphicsPipelineCreateInfo.subpass = 0;
     graphicsPipelineCreateInfo.pMultisampleState = &multisampling;
 
     if (vkCreateGraphicsPipelines(
-            resources->m_logicalDevice,
+            lockedResources->m_logicalDevice,
             nullptr,
             1,
             &graphicsPipelineCreateInfo,
-            resources->m_allocator,
+            lockedResources->m_allocator,
             &m_pipeline) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create graphics pipeline!");
