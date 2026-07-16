@@ -47,6 +47,15 @@ Buffer::Buffer(
         {
             throw std::runtime_error("Failed to bind buffer memory");
         }
+
+        if (!(m_properties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))
+        {
+            m_stagingBuffer = std::make_unique<Buffer>(
+                resources,
+                size,
+                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        }
     }
 }
 
@@ -82,12 +91,7 @@ void Buffer::writeData(const void *data, VkDeviceSize length) const
     }
     else if (const auto ptr = m_resources.lock())
     {
-        Buffer stagingBuffer{
-            m_resources,
-            length,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
-
+        const Buffer& stagingBuffer = *m_stagingBuffer;
         stagingBuffer.writeData(data, length);
 
         VkCommandBufferAllocateInfo allocInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };

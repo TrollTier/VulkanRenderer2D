@@ -98,8 +98,8 @@ void VulkanRenderer::initialize()
             std::make_unique<Buffer>(
                 m_vulkanResources,
                 sizeof(uint32_t) * 10000, // TODO: Make this more dynamic and potentially resizable
-                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
 
         const auto set = m_frameDataDescriptorSets[i];
         VkDescriptorBufferInfo bufferInfo{};

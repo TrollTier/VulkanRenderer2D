@@ -36,6 +36,7 @@ private:
     VkDeviceMemory m_bufferMemory = VK_NULL_HANDLE;
     VkDeviceSize m_bufferSize = 0;
     VkMemoryPropertyFlags m_properties;
+    std::unique_ptr<Buffer> m_stagingBuffer;
 };
 
 #endif //BUFFER_H
